@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "advise-project-approach": {
+      "source": "AaravKashyap12/advise-project-approach",
+      "sourceType": "github",
+      "skillPath": "skills/advise-project-approach/SKILL.md",
+      "computedHash": "6375e041c09fffca7e2623c43d20a97f6535a9594cfc0805ac98d5dbee63110c"
+    }
+  }
+}
