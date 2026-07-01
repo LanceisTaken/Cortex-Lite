@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\UserController;
@@ -26,6 +27,10 @@ Route::get('/me', [UserController::class, 'show'])
     ->middleware(['auth:sanctum', 'verified'])
     ->name('me');
 
-// Temporary stub — replaced by the real controller in Task 6.
-Route::post('/email/verify/{id}/{hash}', fn () => response()->noContent())
+Route::post('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->middleware(['auth:sanctum', 'signed', 'throttle:6,1'])
     ->name('verification.verify');
+
+Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
+    ->middleware(['auth:sanctum', 'throttle:6,1'])
+    ->name('verification.send');
