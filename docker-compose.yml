@@ -1,0 +1,103 @@
+# Cortex Lite — 6-service dev stack.
+#
+# Dev topology:
+#   Host :5173  ->  Vite dev server (React)  ->  cross-origin calls to nginx
+#   Host :8080  ->  nginx  ->  fastcgi 9000  ->  app (PHP-FPM)
+#   Host :3306  ->  mysql
+#   Host :6379  ->  redis
+#   scheduler + queue: no ports, same image as app.
+#
+# In prod the nginx container is built from docker/nginx/Dockerfile (multi-stage,
+# bundles the built React SPA) — the plain nginx:alpine below is dev only.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    image: cortex-lite/app
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - cortex_net
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - cortex_net
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: cortex_lite
+      MYSQL_USER: cortex
+      MYSQL_PASSWORD: cortex
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - cortex_net
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - cortex_net
+
+  scheduler:
+    image: cortex-lite/app
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    volumes:
+      - .:/var/www/html
+    command: ["php", "artisan", "schedule:work"]
+    depends_on:
+      - app
+    networks:
+      - cortex_net
+
+  queue:
+    image: cortex-lite/app
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    volumes:
+      - .:/var/www/html
+    command: ["php", "artisan", "queue:work", "--tries=3", "--sleep=3"]
+    depends_on:
+      - app
+      - redis
+    networks:
+      - cortex_net
+
+networks:
+  cortex_net:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
