@@ -86,9 +86,11 @@ class LoginTest extends TestCase
         $this->getJson('/api/me')->assertStatus(401);
     }
 
-    public function test_me_returns_409_for_unverified_user(): void
+    public function test_me_returns_unverified_user(): void
     {
         $user = User::factory()->unverified()->create();
-        $this->actingAs($user)->getJson('/api/me')->assertStatus(409);
+        $this->actingAs($user)->getJson('/api/me')
+            ->assertOk()
+            ->assertJsonPath('email_verified_at', null);
     }
 }

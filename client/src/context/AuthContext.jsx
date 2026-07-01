@@ -11,15 +11,8 @@ export function AuthProvider({ children }) {
     try {
       const { data } = await api.get('/api/me')
       setUser(data)
-    } catch (err) {
-      const status = err?.response?.status
-      if (status === 401 || status === 419 || status === 409) {
-        // 409 = unverified; still known-user, but /me won't return until verified.
-        // Fall back to no user for now; verification page handles the case.
-        setUser(null)
-      } else {
-        setUser(null)
-      }
+    } catch {
+      setUser(null)
     } finally {
       setLoading(false)
     }

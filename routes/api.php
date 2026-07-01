@@ -27,7 +27,7 @@ Route::post('/logout', [LoginController::class, 'destroy'])
     ->name('logout');
 
 Route::get('/me', [UserController::class, 'show'])
-    ->middleware(['auth:sanctum', 'verified'])
+    ->middleware('auth:sanctum')
     ->name('me');
 
 Route::post('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
