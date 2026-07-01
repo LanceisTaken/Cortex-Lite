@@ -43,3 +43,15 @@ Format per entry:
 ### Verify AWS teardown was actually complete (bill is $0/day again)
 **Cause:** After a live-deployment window, it's easy to leave a residual resource running — an unattached EBS volume, a CloudFront distribution stuck in "Disabling", an RDS snapshot, an ECR repo with images consuming storage. These bleed credits.
 **Fix:** After teardown, run `aws ce get-cost-and-usage --time-period Start=YYYY-MM-DD,End=YYYY-MM-DD --granularity DAILY --metrics UnblendedCost` for a 2-day window centered on the teardown date. Post-teardown days should show near-$0. If not, drill down by service: `--group-by Type=DIMENSION,Key=SERVICE`. Common culprits: NAT Gateway (should never have existed — see architecture rules), unassociated EIPs, CloudFront distributions in "Disabled but not deleted" state, RDS automated snapshots.
+
+### `RuntimeException: Session store not set on request` when hitting a Sanctum-stateful API route in PHPUnit
+**Cause:** Sanctum's `EnsureFrontendRequestsAreStateful` only rewrites the auth guard and starts the session when the request looks like it's "from the frontend" — matched via `Origin` or `Referer` header against the `sanctum.stateful` config list. Laravel's default test HTTP client (`$this->postJson`, `$this->get`, etc.) sends neither header, so the session middleware is skipped and any controller call to `$request->session()->regenerate()` (login, register, logout) throws.
+**Fix:** Set a default `Origin` header on the test client in the base `tests/TestCase.php`:
+```php
+protected function setUp(): void
+{
+    parent::setUp();
+    $this->withHeader('Origin', 'http://'.config('sanctum.stateful')[0]);
+}
+```
+This mirrors the SPA's real request pattern (browser sets `Origin` on cross-origin XHR; under our Vite same-origin proxy setup, it's `http://localhost:5173`). It does NOT weaken CSRF checks (CSRF is keyed off the `X-XSRF-TOKEN` header/cookie, independent of `Origin`).
