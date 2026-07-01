@@ -112,3 +112,31 @@ Format per entry:
 **Rationale:** Sync is simpler (no queue plumbing, no polling endpoint, no client-side state machine). ~2–3s is inside "acceptable for a considered action" and users expect a short wait for AI features. Cache hits are effectively instant, which will be the common path for popular game/hardware tuples.
 **Alternatives considered:** Async via queue + client polling (rejected for v1 — more code across backend, queue worker, and client for a UX gain that's marginal at this latency). Server-Sent Events or WebSocket streaming (rejected — extra infra, no obvious payoff for a 3-second call).
 **Consequences:** The `queue` service isn't heavily exercised by the LLM path in v1 — it earns its keep via Steam sync jobs and scheduled tasks. If cold-path latency becomes a real complaint, we can move `ExplanationGenerator` to async in a later phase without changing the recommendation-engine contract.
+
+### Cashier installed in Phase 1 (pulled forward from Phase 5) for DELETE /api/account
+**Date:** 2026-07-01
+**Decision:** Install Laravel Cashier during Phase 1 so `DELETE /api/account` can actually cancel a subscription via `$user->subscription('default')?->cancelNow()`. Cashier's migrations, `Billable` trait, and env keys are wired now; Stripe routes, checkout, and webhook remain in Phase 5.
+**Rationale:** The alternative — a `// TODO(phase-5)` comment or a swappable `BillingService` interface — leaves a hole in the delete-account resume bullet that we'd have to defend as half-shipped. Cashier install is additive: no runtime cost until a real subscription exists.
+**Alternatives considered:** Null billing service in Phase 1, real Stripe in Phase 5 (rejected — extra scaffolding for a one-line cutover). Defer the whole endpoint to Phase 5 (rejected — plan explicitly lists it in Phase 1, and the security signal of a working GDPR-shaped delete belongs with the auth surface).
+**Consequences:** Three additional migrations run in Phase 1. `Billable` on User. No Stripe API calls until Phase 5 (routes/webhook/UI still deferred).
+
+### Vite proxy for dev instead of separate origins + CORS
+**Date:** 2026-07-01
+**Decision:** Dev-time browser sees `http://localhost:5173` only; Vite proxies `/api/*` and `/sanctum/*` to nginx at `:8080`.
+**Rationale:** Matches production topology (nginx serves React and proxies `/api` — same origin). Removes cross-origin cookie / CORS-credentials edge cases from the dev loop, which is the exact class of bugs `TROUBLESHOOTING.md` calls out as the #1 Sanctum SPA gotcha.
+**Alternatives considered:** Two origins + CORS + `withCredentials` (rejected — reproduces a production-inconsistent dev environment for zero benefit).
+**Consequences:** `SANCTUM_STATEFUL_DOMAINS=localhost:5173`; `client/vite.config.js` gains a proxy block; CORS config kept for prod symmetry.
+
+### Delete-account extracted to an Action; other auth flows stay in-controller
+**Date:** 2026-07-01
+**Decision:** `App\Actions\Auth\DeleteAccountAction` owns the transaction (cancel subscription → delete user); Register/Login/Logout stay in thin controllers.
+**Rationale:** Only delete-account has real branching (subscription check, transaction, rollback semantics). The other auth flows are framework orchestration — extracting them into actions inflates the codebase without unit-test payoff.
+**Alternatives considered:** Extract all four (rejected — over-engineering). Leave delete-account in controller (rejected — non-trivial rollback logic deserves isolated unit tests).
+**Consequences:** Portfolio signals Actions pattern in the right place. Controllers stay 4–8 lines each.
+
+### Custom `verified` middleware returning 409 for JSON APIs
+**Date:** 2026-07-01
+**Decision:** Override the framework's `EnsureEmailIsVerified` middleware with `app/Http/Middleware/EnsureEmailIsVerified.php`, aliased to `verified` in `bootstrap/app.php`. JSON requests from an unverified-but-authenticated user get `409 Conflict` instead of the framework default `403`.
+**Rationale:** The frontend needs to distinguish "logged in but unverified" (a resolvable, expected state — show the resend-verification banner) from "forbidden" (a real authorization failure — show an error page). Reusing 403 for both would force the SPA to inspect the response body to tell them apart.
+**Alternatives considered:** Keep the framework default 403 and disambiguate client-side via response body inspection (rejected — brittle, couples the frontend to error-message text). Custom header on a 403 (rejected — 409 is the more semantically correct status code for "conflicts with the current state of the resource" and needs no extra parsing).
+**Consequences:** Non-JSON (web) requests keep the standard redirect-to-verification-notice behavior — only the JSON branch changes. Any new route gated by `verified` inherits this behavior automatically.

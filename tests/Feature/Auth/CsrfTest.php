@@ -31,6 +31,10 @@ class CsrfTest extends TestCase
         // short-circuits verification whenever runningUnitTests() is true, which is
         // the case for the whole phpunit run (APP_ENV=testing). Flip the app env for
         // this one request so real token verification actually executes.
+        //
+        // This mutation is safe to leave set for the rest of the run: Laravel
+        // recreates $this->app from scratch per test method via
+        // tearDownTheTestEnvironment(), so it can't leak into other tests.
         $this->app['env'] = 'production';
 
         $response = $this->post('/api/login', [

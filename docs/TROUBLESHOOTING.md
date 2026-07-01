@@ -55,3 +55,19 @@ protected function setUp(): void
 }
 ```
 This mirrors the SPA's real request pattern (browser sets `Origin` on cross-origin XHR; under our Vite same-origin proxy setup, it's `http://localhost:5173`). It does NOT weaken CSRF checks (CSRF is keyed off the `X-XSRF-TOKEN` header/cookie, independent of `Origin`).
+
+### Sanctum SPA login returns 419 CSRF token mismatch
+**Cause:** One of (a) client didn't `GET /sanctum/csrf-cookie` before the first state-changing request; (b) Axios missing `withCredentials: true` / `withXSRFToken: true`; (c) `SANCTUM_STATEFUL_DOMAINS` doesn't include the browser's origin.
+**Fix:** Three-part checklist. In dev the browser origin is `localhost:5173` (Vite), so `SANCTUM_STATEFUL_DOMAINS=localhost:5173`. Axios client at `client/src/lib/api.js` sets both flags. The CSRF interceptor ensures the cookie call happens before any POST/PUT/PATCH/DELETE.
+
+### Email verification link 403 in dev
+**Cause:** The verification link that Laravel emails uses a temporary signed URL. The SPA `/verify-email/:id/:hash` page must POST back to the backend with the full `?signature=…&expires=…` query string intact. Any transformation (URL-encoding it twice, stripping trailing params, changing method) breaks the HMAC.
+**Fix:** The SPA verification page forwards `window.location.search` verbatim to `POST /api/email/verify/{id}/{hash}{location.search}`. In tests, mint the URL with `URL::temporarySignedRoute('verification.verify', now()->addMinutes(60), ['id' => $user->id, 'hash' => sha1($user->email)])` and POST to it directly.
+
+### `assertGuest()` returns false after `Auth::guard('web')->logout()` in Sanctum-guarded tests
+**Cause:** The `auth:sanctum` middleware calls `Auth::shouldUse('sanctum')` during authentication, and Sanctum's `RequestGuard` caches the resolved user for the lifetime of the request. Logging out only the `web` guard leaves that cached `sanctum` user pointer alive, so a subsequent `Auth::check()` (including the one inside `assertGuest()`) still reports authenticated.
+**Fix:** Also call `Auth::forgetUser()` immediately after `Auth::guard('web')->logout()` to clear the cached pointer on the current default guard. Implemented in `LoginController::destroy` and `AccountController::destroy`.
+
+### PHPUnit `withMiddleware(ValidateCsrfToken::class)` doesn't actually enable CSRF checks in tests
+**Cause:** Laravel's `PreventRequestForgery::runningUnitTests()` short-circuits CSRF verification whenever `$app['env'] === 'testing'`, which is true for the entire PHPUnit run — `withMiddleware()`/`withoutMiddleware()` never come into play for this check.
+**Fix:** For a specific test that must verify CSRF rejection, temporarily set `$this->app['env'] = 'production'` right before the assertion. This is safe because Laravel recreates `$this->app` per test method via `tearDownTheTestEnvironment()`, so the mutation cannot leak into other tests. See `tests/Feature/Auth/CsrfTest.php::test_missing_csrf_token_is_rejected_on_web_login_route`.

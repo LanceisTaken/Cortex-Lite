@@ -13,3 +13,31 @@ System design and infrastructure. Update when adding or removing services, chang
 ## External integrations
 
 ## Security model
+
+## Authentication
+
+Cookie-based Sanctum SPA auth. React (dev on Vite `:5173`, prod behind nginx) treats itself as first-party to the API.
+
+**Cookie flow:**
+1. Browser GETs `/sanctum/csrf-cookie` (204). Server sets `XSRF-TOKEN` cookie (readable JS) and `laravel_session` cookie (HTTP-only).
+2. Every state-changing XHR carries the `XSRF-TOKEN` value in the `X-XSRF-TOKEN` header (Axios does this via `withXSRFToken: true`).
+3. `EnsureFrontendRequestsAreStateful` (Sanctum) short-circuits the api group's auth to session-based when the request comes from a stateful domain.
+
+**Auth route table:**
+
+| Verb | Path | Middleware | Notes |
+|---|---|---|---|
+| POST | /api/register | guest | 201, logs the user in, fires Registered |
+| POST | /api/login | guest, throttle:5,1 | 429 + Retry-After after 5 fails |
+| POST | /api/logout | auth:sanctum | invalidates session |
+| GET  | /api/me | auth:sanctum | returns user (verified flag included) |
+| POST | /api/forgot-password | guest, throttle:6,1 | enumeration-safe response |
+| POST | /api/reset-password | guest, throttle:6,1 | Password::defaults() applied |
+| POST | /api/email/verify/{id}/{hash} | auth:sanctum, signed, throttle:6,1 | SPA re-POSTs the signed URL |
+| POST | /api/email/verification-notification | auth:sanctum, throttle:6,1 | resend |
+| DELETE | /api/account | auth:sanctum | via DeleteAccountAction (transaction: Cashier cancelNow → delete) |
+
+**Notification URL rewriting:**
+`VerifyEmail::createUrlUsing` and `ResetPassword::createUrlUsing` in `AppServiceProvider::boot()` rewrite the notification URLs to point at the frontend routes. The SPA verification page POSTs the preserved signed URL back to the backend to complete the flow.
+
+**Cashier installed early.** Only `Billable` trait, migrations, and the `subscription()` API surface land in Phase 1 — no Stripe routes, no webhook, no checkout UI. Those arrive in Phase 5.

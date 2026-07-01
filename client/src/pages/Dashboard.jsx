@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { VerifiedBanner } from '../components/VerifiedBanner'
-import { Button } from '../components/ui/Button'
 
 export default function Dashboard() {
   const { user, logout } = useAuth()

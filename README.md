@@ -25,6 +25,7 @@ Common tasks: `make test`, `make shell`, `make logs`, `make artisan CMD="route:l
 ## Sprint changelog
 
 - **Sprint 0 — Setup, Docker, CI.** Laravel 13 + React 19 scaffolded. Six-service Docker Compose stack (app, nginx, mysql, redis, scheduler, queue). Multi-stage prod Dockerfile for the React → nginx image. GitHub Actions CI running PHPUnit on every push. Four docs (`ARCHITECTURE.md`, `DECISIONS.md`, `TROUBLESHOOTING.md`, this README) live under `docs/`.
+- **Phase 1** — Sanctum SPA auth (register/login/logout/me), password reset, email verification, throttled login with Retry-After, delete-account with Cashier subscription teardown. 34 feature + 6 unit tests (grew from the planned 23+6 as scope expanded with CashierInstallTest, CsrfTest, and expanded LoginTest coverage). Cashier installed early; no live Stripe surface yet.
 
 ## Screenshots
 
