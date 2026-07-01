@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -44,3 +45,7 @@ Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
 Route::post('/reset-password', [NewPasswordController::class, 'store'])
     ->middleware(['guest', 'throttle:6,1'])
     ->name('password.update');
+
+Route::delete('/account', [AccountController::class, 'destroy'])
+    ->middleware('auth:sanctum')
+    ->name('account.destroy');
