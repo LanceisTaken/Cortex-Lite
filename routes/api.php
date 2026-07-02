@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\PlaySessionController;
 use App\Http\Controllers\SteamAuthController;
 use App\Http\Controllers\SteamSyncController;
 use App\Http\Controllers\UserController;
@@ -53,6 +54,17 @@ Route::apiResource('games', GameController::class)
     ->except(['show']);
 
 Route::middleware('auth:sanctum')->group(function (): void {
+    Route::post('/sessions/start', [PlaySessionController::class, 'start'])
+        ->middleware('throttle:30,1')
+        ->name('sessions.start');
+    Route::get('/sessions/active', [PlaySessionController::class, 'active'])
+        ->name('sessions.active');
+    Route::get('/sessions', [PlaySessionController::class, 'index'])
+        ->name('sessions.index');
+    Route::post('/sessions/{session}/end', [PlaySessionController::class, 'end'])
+        ->middleware('throttle:30,1')
+        ->name('sessions.end');
+
     Route::get('/steam/login', [SteamAuthController::class, 'login'])
         ->middleware('throttle:6,1')
         ->name('steam.login');

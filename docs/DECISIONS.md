@@ -196,3 +196,24 @@ Format per entry:
 **Rationale:** Vanity URLs are an optional Steam profile customization, not a universal identifier users can reliably copy from a normal profile link. Asking for SteamID64 is more explicit and avoids a second Steam API dependency just to translate user input before syncing.
 **Alternatives considered:** Keep vanity resolution as the fallback (rejected because many users do not have a vanity URL configured, which makes the fallback confusing at the exact moment it is supposed to unblock them). Support both vanity and SteamID64 inputs (rejected for now because it adds UI and validation complexity without helping the demo path enough).
 **Consequences:** The manual fallback route now validates a 17-digit SteamID64 locally and persists it directly. `SteamClient` no longer wraps `ResolveVanityURL`, so the Steam service surface is smaller and the tests focus on linking and sync behavior instead of profile-handle translation.
+
+### One active play-session per user via row-locked user in a transaction
+**Date:** 2026-07-02
+**Decision:** Enforce "one open `play_sessions` row per user" via `DB::transaction` plus `User::whereKey($id)->lockForUpdate()` around a `whereNull('ended_at')->exists()` check before insert.
+**Rationale:** Portable across MySQL 8 in dev/prod and SQLite in tests. Race-safe under concurrent "start session" calls from the same user.
+**Alternatives considered:** Partial unique index on `user_id WHERE ended_at IS NULL` (rejected because MySQL 8 does not support it directly). Application-only check without row locking (rejected because it races under concurrent requests). Serializable transaction (rejected as heavier than needed).
+**Consequences:** Every start-session call takes a brief row lock on the user's row for the duration of the transaction. Acceptable for a low-QPS user-scoped action.
+
+### Session-end increments `games.playtime_minutes` only for manual-sourced games
+**Date:** 2026-07-02
+**Decision:** In `EndPlaySessionAction`, only bump `games.playtime_minutes` when `games.source = 'manual'`. Steam-sourced games have `last_played_at` updated but not the aggregate playtime.
+**Rationale:** Steam is authoritative for Steam games. `SteamLibrarySynchronizer::sync` upserts `playtime_minutes` from Steam's `playtime_forever` on every scheduled sync, so any local increment would be silently overwritten. If we incremented locally and Steam later added the same minutes, the total could double-count during sync overlap.
+**Alternatives considered:** Always increment locally (rejected because it double-counts or is clobbered against Steam re-sync). Never increment locally (rejected because manual games have no external source). Split into `local_playtime_minutes` and `steam_playtime_minutes` (rejected as schema churn for a small benefit).
+**Consequences:** Session records are the source of truth for history. `games.playtime_minutes` is a cached aggregate with source-per-row semantics.
+
+### `play_sessions` table avoids Laravel HTTP session collision
+**Date:** 2026-07-02
+**Decision:** Domain table is `play_sessions`; model is `App\Models\PlaySession`. URL paths remain `/api/sessions/*` per the build-plan spec.
+**Rationale:** Laravel's database session driver already occupies the `sessions` table via the framework migration. Reusing the name would collide with HTTP session storage.
+**Alternatives considered:** Switching the session driver to file/Redis to free the name (rejected because it changes the established Sanctum session setup). Keeping the URL and table both named `sessions` (rejected because the DB table would be ambiguous and unsafe).
+**Consequences:** Slight internal-vs-URL naming divergence; documented here to prevent confusion.

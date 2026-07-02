@@ -75,3 +75,11 @@ This mirrors the SPA's real request pattern (browser sets `Origin` on cross-orig
 ### Escaped `%` and `_` game title searches return zero rows or 500 in tests
 **Cause:** SQL `LIKE` wildcard escaping is database-specific if the escape character is only implied. Backslash escaping produced different behavior between SQLite test runs and MySQL, and SQLite rejected an `ESCAPE '\\'` clause as a two-character escape expression.
 **Fix:** Use an explicit portable escape character that does not need special SQL string handling. The games index search escapes `!`, `%`, and `_`, then queries with `title like ? escape '!'`.
+
+### `POST /api/sessions/start` returns 409 `play_session_already_active`
+**Cause:** The user already has a `play_sessions` row with `ended_at IS NULL`. The active-session invariant is application-enforced by a lock-then-check inside `StartPlaySessionAction`.
+**Fix:** End the existing session via `POST /api/sessions/{id}/end` (or `GET /api/sessions/active` to find its id), then retry the start. If the UI banner is stale, call `refresh()` on `usePlaySession()` to re-fetch.
+
+### After a Steam re-sync, session-tracked minutes appear to reset on a Steam game
+**Cause:** By design. Steam's `playtime_forever` is authoritative for Steam-sourced games and overwrites `games.playtime_minutes` on every scheduled sync. The session record itself is untouched, so the history page still shows the session.
+**Fix:** Not a bug. Per-game totals shown on the history page are computed from `sum(duration_seconds)` over ended sessions, not from `games.playtime_minutes`.

@@ -2,6 +2,14 @@
 
 Most recent first.
 
+## [2026-07-02] Cortex Lite - Phase 3 session tracking shipped
+
+Implemented the play-session lifecycle end-to-end: `play_sessions` table (`sessions` was taken by Laravel's HTTP session store), `PlaySession` model, `StartPlaySessionAction` (race-safe via `User::lockForUpdate()` inside a transaction, portable across MySQL 8 and SQLite), `EndPlaySessionAction` (transactional; only bumps `games.playtime_minutes` for `source = 'manual'` games because Steam sync is authoritative for Steam rows), the four endpoints (`POST /api/sessions/start`, `POST /api/sessions/{id}/end`, `GET /api/sessions/active`, `GET /api/sessions` history paginated), and the React side: `PlaySessionContext` with a client-side elapsed-time ticker, a persistent `ActiveSessionBanner` on Dashboard/Library/History, a per-row Start button on Library, and a new `/history` page grouped by game. Docs updated in `DECISIONS.md`, `TROUBLESHOOTING.md`, `ARCHITECTURE.md`, and `README.md`. Verified with `make test` and frontend static checks; browser manual testing intentionally left for the user.
+
+-> branch `Phase-3`
+
+---
+
 ## [2026-07-02] Cortex Lite - Steam fallback simplified to direct SteamID64
 
 Reworked the manual Steam connection fallback to accept direct `SteamID64` input instead of vanity URLs. Replaced the backend route/request/controller path with `POST /api/steam/connect-id`, removed the unused `ResolveVanityURL` support from `SteamClient`, updated the dashboard fallback form/copy, renamed the feature coverage to `SteamIdConnectTest`, and refreshed the affected docs (`README.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/cortex-lite-build-plan.md`, plus the local agent guidance files). Verified with `make test` -> 115 passed. Committed the code/docs change as `0a592b7` (`[Sprint 2] simplify Steam fallback to direct SteamID64`).

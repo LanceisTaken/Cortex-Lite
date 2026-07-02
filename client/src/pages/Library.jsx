@@ -6,6 +6,8 @@ import { FormError } from '../components/ui/FormError'
 import { DeleteGameModal } from '../components/games/DeleteGameModal'
 import { GameFormModal } from '../components/games/GameFormModal'
 import { LibraryFilters } from '../components/games/LibraryFilters'
+import { ActiveSessionBanner } from '../components/sessions/ActiveSessionBanner'
+import { usePlaySession } from '../context/playSessionContextValue'
 import { createGame, deleteGame, listGames, updateGame } from '../lib/games'
 
 const defaultFilters = { status: '', search: '', sort: 'last_played_desc' }
@@ -61,6 +63,7 @@ function CoverImage({ game }) {
 
 export default function Library() {
   const { refresh } = useAuth()
+  const { active, start } = usePlaySession()
   const [filters, setFilters] = useState(defaultFilters)
   const [page, setPage] = useState(1)
   const [games, setGames] = useState([])
@@ -70,6 +73,8 @@ export default function Library() {
   const [formGame, setFormGame] = useState(null)
   const [formOpen, setFormOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [startingGameId, setStartingGameId] = useState(null)
+  const [sessionError, setSessionError] = useState(null)
 
   const fetchGames = useCallback(async (signal) => {
     setError(null)
@@ -122,6 +127,22 @@ export default function Library() {
     await fetchGames()
   }
 
+  async function handleStart(gameId) {
+    setStartingGameId(gameId)
+    setSessionError(null)
+    try {
+      await start(gameId)
+    } catch (err) {
+      if (err.response?.status === 409 && err.response?.data?.error_code === 'play_session_already_active') {
+        setSessionError('You already have an active session. End it first.')
+      } else {
+        setSessionError('Could not start the session. Please try again.')
+      }
+    } finally {
+      setStartingGameId(null)
+    }
+  }
+
   const emptyLibrary = !loading && !error && meta.total === 0
     && !filters.status && !filters.search && filters.sort === defaultFilters.sort
 
@@ -130,6 +151,7 @@ export default function Library() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link to="/dashboard" className="text-sm text-slate-500 hover:underline">Dashboard</Link>
+          <Link to="/history" className="ml-3 text-sm text-slate-500 hover:underline">History</Link>
           <h1 className="text-2xl font-semibold">Library</h1>
         </div>
         <Button type="button" onClick={() => { setFormGame(null); setFormOpen(true); }} className="w-auto">
@@ -137,7 +159,9 @@ export default function Library() {
         </Button>
       </header>
 
+      <ActiveSessionBanner />
       <LibraryFilters filters={filters} onChange={changeFilters} onReset={resetFilters} />
+      <FormError message={sessionError} />
       <FormError message={error} />
 
       {loading && games.length === 0 ? (
@@ -178,6 +202,14 @@ export default function Library() {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={active !== null || startingGameId === game.id}
+                    onClick={() => handleStart(game.id)}
+                    className="rounded-md border border-emerald-300 px-3 py-2 text-sm text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {startingGameId === game.id ? 'Starting...' : 'Start'}
+                  </button>
                   <button type="button" onClick={() => { setFormGame(game); setFormOpen(true); }}
                     className="rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">
                     Edit

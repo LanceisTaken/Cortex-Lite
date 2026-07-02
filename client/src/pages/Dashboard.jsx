@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { VerifiedBanner } from '../components/VerifiedBanner'
+import { ActiveSessionBanner } from '../components/sessions/ActiveSessionBanner'
 import { Button } from '../components/ui/Button'
 import { api } from '../lib/api'
 import { SteamPrivateProfileError } from '../components/steam/SteamPrivateProfileError'
@@ -120,10 +121,12 @@ export default function Dashboard() {
         <h1 className="text-2xl font-semibold">Cortex Lite</h1>
         <div className="flex items-center gap-3 text-sm">
           <Link to="/library" className="text-slate-600 hover:underline">Library</Link>
+          <Link to="/history" className="text-slate-600 hover:underline">History</Link>
           <Link to="/account" className="text-slate-600 hover:underline">Account</Link>
           <button onClick={logout} className="text-slate-600 hover:underline">Log out</button>
         </div>
       </header>
+      <ActiveSessionBanner />
       <VerifiedBanner user={user} />
       <section className="rounded-md border border-slate-200 p-6">
         <h2 className="text-lg font-medium">Welcome, {user.name}.</h2>

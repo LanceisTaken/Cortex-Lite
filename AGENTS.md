@@ -82,8 +82,8 @@ Laravel 13, PHP 8.4, MySQL 8.4, Redis 7, React 19 (Vite), Tailwind, Laravel Sanc
 ## Phase tracker (update this as phases complete)
 - [x] Phase 0 — Setup, Docker, CI
 - [x] Phase 1 — Auth & user management
-- [ ] Phase 2 — Game library + Steam integration
-- [ ] Phase 3 — Session tracking
+- [x] Phase 2 — Game library + Steam integration
+- [x] Phase 3 — Session tracking
 - [ ] Phase 4 — Hardware database + data pipeline (starts with 1-day PCGamingWiki spike)
 - [ ] Phase 5 — AI optimizer + Stripe freemium
 - [ ] Phase 6 — AWS deployment + NATIVE_AGENT_CONTRACT.md

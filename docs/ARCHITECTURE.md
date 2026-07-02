@@ -10,7 +10,9 @@ System design and infrastructure. Update when adding or removing services, chang
 
 - `users` own account/auth state, including Cashier columns installed in Phase 1 plus nullable Steam linkage fields: `steam_id` (unique SteamID64 string) and `steam_id_resolved_at`.
 - `games` is a user-scoped library table for both manual and Steam-imported entries. Steam sync keys rows by `(user_id, steam_app_id)` so repeat syncs update the same Steam-owned row without touching manual rows with null `steam_app_id`.
+- `play_sessions` stores manual tracking history for both manual and Steam games. Open rows have `ended_at = null`; end-session writes are transactional and only increment cached `games.playtime_minutes` for manual-sourced games.
 - Game library list queries are indexed by `(user_id, status)` and `(user_id, last_played_at)`.
+- Session queries are indexed by `(user_id, ended_at)` for active lookup and `(user_id, started_at)` for history ordering.
 
 ## AWS infrastructure (Phase 6+)
 
@@ -52,6 +54,10 @@ Cookie-based Sanctum SPA auth. React (dev on Vite `:5173`, prod behind nginx) tr
 | GET  | /api/steam/callback | auth:sanctum | attach verified SteamID64, then redirect to `/dashboard` |
 | POST | /api/steam/connect-id | auth:sanctum | manual Steam fallback via direct SteamID64 entry |
 | POST | /api/steam/sync | auth:sanctum | transactional Steam library sync |
+| POST | /api/sessions/start | auth:sanctum, throttle:30,1 | start a user-scoped play session |
+| POST | /api/sessions/{session}/end | auth:sanctum, throttle:30,1 | end own session, transactional duration/playtime update |
+| GET | /api/sessions/active | auth:sanctum | current open session with game summary |
+| GET | /api/sessions | auth:sanctum | paginated ended-session history |
 
 **Notification URL rewriting:**
 `VerifyEmail::createUrlUsing` and `ResetPassword::createUrlUsing` in `AppServiceProvider::boot()` rewrite the notification URLs to point at the frontend routes. The SPA verification page POSTs the preserved signed URL back to the backend to complete the flow.

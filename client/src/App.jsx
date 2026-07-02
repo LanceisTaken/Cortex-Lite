@@ -9,6 +9,7 @@ import VerifyEmail from './pages/VerifyEmail'
 import Dashboard from './pages/Dashboard'
 import Account from './pages/Account'
 import Library from './pages/Library'
+import History from './pages/History'
 
 function GuestOnly({ children }) {
   const { user, loading } = useAuth()
@@ -32,6 +33,7 @@ export default function App() {
       <Route path="/verify-email/:id/:hash" element={<VerifyEmail />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+      <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
       <Route path="/account" element={<ProtectedRoute requireVerified={false}><Account /></ProtectedRoute>} />
       <Route path="*" element={<Fallback />} />
     </Routes>

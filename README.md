@@ -29,6 +29,7 @@ Common tasks: `make test`, `make shell`, `make logs`, `make artisan CMD="route:l
 
 - **Sprint 2 - Games library CRUD.** Added the user-scoped `games` table, manual CRUD API, IDOR-safe 404 behavior, wildcard-safe search, and a protected React `/library` page with filters, sorting, pagination, create/edit modal flow, and guarded delete. Steam OpenID/import remains the next Phase 2 sub-phase.
 - **Sprint 2b - Steam OpenID + Web API integration.** Added Steam account linking via OpenID and direct SteamID64 fallback, transactional `/api/steam/sync`, nightly `steam:sync-all`, Redis-backed Steam response caching, and a dashboard Steam panel with connect/sync actions plus targeted privacy-settings guidance for the "Profile" and "Game Details" toggles.
+- **Sprint 3 - Session tracking.** Added the play-session lifecycle (start/end/active/history), race-safe one-active-per-user invariant, manual-only playtime aggregation, persistent React active-session banner, and `/history` page grouped by game.
 
 ## Screenshots
 
