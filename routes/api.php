@@ -7,6 +7,8 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\SteamAuthController;
+use App\Http\Controllers\SteamSyncController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -49,3 +51,15 @@ Route::delete('/account', [AccountController::class, 'destroy'])
 Route::apiResource('games', GameController::class)
     ->middleware('auth:sanctum')
     ->except(['show']);
+
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('/steam/login', [SteamAuthController::class, 'login'])
+        ->middleware('throttle:6,1')
+        ->name('steam.login');
+    Route::post('/steam/connect-vanity', [SteamAuthController::class, 'connectVanity'])
+        ->middleware('throttle:6,1')
+        ->name('steam.connect-vanity');
+    Route::post('/steam/sync', [SteamSyncController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('steam.sync');
+});

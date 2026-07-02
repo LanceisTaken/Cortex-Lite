@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'steam' => [
+        'api_key' => env('STEAM_API_KEY'),
+        'openid_realm' => env('STEAM_OPENID_REALM', env('APP_URL')),
+        'openid_return_url' => env('STEAM_OPENID_RETURN_URL'),
+    ],
+
 ];

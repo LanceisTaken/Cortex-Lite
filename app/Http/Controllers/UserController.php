@@ -10,7 +10,15 @@ class UserController extends Controller
     public function show(Request $request): JsonResponse
     {
         return response()->json(
-            $request->user()->only('id', 'name', 'email', 'email_verified_at', 'created_at')
+            $request->user()->only(
+                'id',
+                'name',
+                'email',
+                'email_verified_at',
+                'steam_id',
+                'steam_id_resolved_at',
+                'created_at',
+            )
         );
     }
 }

@@ -22,7 +22,7 @@ Format per entry:
 
 ### Steam sync returns 422 with a "profile is private" error
 **Cause:** Both of Steam's privacy toggles must be Public — most users only flip one. The user's "Profile" is Public but their "Game Details" section is still Private (or vice versa). `GetOwnedGames` requires "Game Details" to be Public specifically; `GetPlayerSummaries` reads the "Profile" visibility. If either is not Public, our pre-flight check on `communityvisibilitystate` and/or the games call itself fails.
-**Fix:** Direct the user to Steam → Profile → Edit Profile → Privacy Settings, and set BOTH "My profile" AND "Game details" to Public. Save. Retry the sync. The UI must surface both toggles by name (not just "make your profile public") — this is the single highest-friction step in the Steam connection flow, so the error copy needs to be specific.
+**Fix:** Direct the user to Steam → Profile → Edit Profile → Privacy Settings, and set BOTH "My profile" AND "Game details" to Public. Save. Retry the sync. Player-summary visibility is cached for 60 seconds, so if the user fixed the toggles immediately before retrying they may need to wait about a minute before the next attempt. The UI must surface both toggles by name (not just "make your profile public") — this is the single highest-friction step in the Steam connection flow, so the error copy needs to be specific.
 
 ### Stripe webhook returns 400 "signature verification failed" in production but works locally
 **Cause:** CloudFront's default cache behavior strips several headers (including `Stripe-Signature`) and can modify the request body in transit, both of which break `\Stripe\Webhook::constructEvent()`. The signature was calculated by Stripe against the raw body; any mutation invalidates it.

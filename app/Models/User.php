@@ -24,6 +24,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'steam_id_resolved_at' => 'datetime',
         ];
     }
 

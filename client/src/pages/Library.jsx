@@ -26,6 +26,39 @@ function statusLabel(status) {
   return status.charAt(0).toUpperCase() + status.slice(1)
 }
 
+function highResSteamCoverUrl(game) {
+  if (!game.steam_app_id) return game.cover_url
+
+  if (!game.cover_url || game.cover_url.includes('/steamcommunity/public/images/apps/')) {
+    return `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${game.steam_app_id}/library_600x900.jpg`
+  }
+
+  return game.cover_url
+}
+
+function CoverImage({ game }) {
+  const [failed, setFailed] = useState(false)
+  const coverUrl = highResSteamCoverUrl(game)
+
+  if (!coverUrl || failed) {
+    return (
+      <div className="flex h-16 w-16 items-center justify-center rounded-md bg-slate-100 text-xs text-slate-400">
+        Cover
+      </div>
+    )
+  }
+
+  return (
+    <img
+      alt={`${game.title} cover`}
+      className="h-16 w-16 rounded-md bg-slate-100 object-cover"
+      loading="lazy"
+      onError={() => setFailed(true)}
+      src={coverUrl}
+    />
+  )
+}
+
 export default function Library() {
   const { refresh } = useAuth()
   const [filters, setFilters] = useState(defaultFilters)
@@ -129,9 +162,7 @@ export default function Library() {
           <div className="divide-y divide-slate-200">
             {games.map((game) => (
               <article key={game.id} className="grid gap-4 p-4 md:grid-cols-[64px_1fr_auto] md:items-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-md bg-slate-100 text-xs text-slate-400">
-                  Cover
-                </div>
+                <CoverImage game={game} />
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="truncate text-base font-semibold">{game.title}</h2>

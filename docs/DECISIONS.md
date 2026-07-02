@@ -161,3 +161,31 @@ Format per entry:
 **Rationale:** Returning 403 would confirm that another user's game id exists. A 404 preserves resource opacity and matches the IDOR testing rule for user-owned endpoints.
 **Alternatives considered:** Policies returning 403 (rejected for existence disclosure). Globally scoped route-model binding (deferred; explicit user-scoped lookup in the controller is clearer for this first resource).
 **Consequences:** Tests assert 404, not 403, for cross-user update and delete. Future user-owned resources should follow the same response posture unless there is a product reason to reveal existence.
+
+### Hand-rolled Steam OpenID verification
+**Date:** 2026-07-02
+**Decision:** Implement Steam OpenID verification in a small in-repo `SteamOpenIdVerifier` instead of adding a third-party package.
+**Rationale:** The protocol surface we need is tiny: guard the expected OpenID parameters, post `check_authentication` back to Steam, and extract the SteamID64 from `claimed_id`. Keeping that logic visible in the repo makes the security story reviewable in an interview and avoids adding a dependency for a small amount of code.
+**Alternatives considered:** `xPaw/SteamOpenID` (rejected because the code we need is small, security-critical, and easier to reason about directly in the repo). Inlining the protocol logic in a controller (rejected because the verification logic deserves focused tests and a single seam).
+**Consequences:** We own the protocol guards and tests. The verifier hard-codes Steam's OpenID endpoint for the check-authentication POST, which closes off request-driven OP/SSRF surprises.
+
+### Split Steam cache TTLs by endpoint
+**Date:** 2026-07-02
+**Decision:** Cache Steam owned-games responses for 1 hour and player summaries for 60 seconds in Redis.
+**Rationale:** Owned-games data changes slowly enough that a 1 hour cache meaningfully cuts quota and latency. Profile visibility is different: if a user fixes Steam privacy settings after a failed sync, a 1 hour summary cache would trap them behind a stale private-profile result. A 60 second summary cache preserves the recovery path without throwing away the rate-limit protection.
+**Alternatives considered:** 1 hour for everything (rejected because it makes privacy-toggle recovery frustrating). No cache on player summaries (rejected because every sync click would always hit Steam even during repeated retries).
+**Consequences:** Steam cache keys are deterministic and hashed by stable input only. Troubleshooting guidance needs to mention the short wait after fixing privacy settings.
+
+### Transactional Steam sync via upsert on `(user_id, steam_app_id)`
+**Date:** 2026-07-02
+**Decision:** Steam library sync uses a composite unique index on `(user_id, steam_app_id)` and bulk `upsert()` inside a database transaction.
+**Rationale:** The unique index gives the sync path a stable identity for a user's Steam-owned rows. `upsert()` updates Steam-owned fields in place while leaving manual rows with null `steam_app_id` alone, and the transaction guarantees we never land in a partially-synced state.
+**Alternatives considered:** Per-row `updateOrCreate()` (rejected because it is noisier, slower, and easier to leave partially applied without careful transaction coverage). Title-based matching (rejected because manual and Steam rows must stay distinct even when titles collide).
+**Consequences:** Steam is authoritative for Steam-owned rows only. Re-syncs refresh playtime/title/icon metadata without overwriting user-curated `status`, `genre`, or `platform`.
+
+### Nightly Steam sync on the existing scheduler service
+**Date:** 2026-07-02
+**Decision:** Register `steam:sync-all` on Laravel's scheduler with a daily cadence.
+**Rationale:** The scheduler container already exists from Phase 0, so nightly sync adds no new infrastructure. A daily refresh keeps the demo library reasonably fresh without needing WebSockets or progress infrastructure in Phase 2.
+**Alternatives considered:** On-demand sync only (rejected because the scheduler service would remain unused and the Steam story would feel incomplete). Higher-frequency polling (rejected because it adds unnecessary API churn for a portfolio app).
+**Consequences:** The batch command must continue past per-user failures and log warnings instead of aborting the run. The command becomes a reusable operational seam for later monitoring in Phase 6.

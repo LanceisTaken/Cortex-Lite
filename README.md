@@ -28,6 +28,7 @@ Common tasks: `make test`, `make shell`, `make logs`, `make artisan CMD="route:l
 - **Phase 1** — Sanctum SPA auth (register/login/logout/me), password reset, email verification, throttled login with Retry-After, delete-account with Cashier subscription teardown. 34 feature + 6 unit tests (grew from the planned 23+6 as scope expanded with CashierInstallTest, CsrfTest, and expanded LoginTest coverage). Cashier installed early; no live Stripe surface yet.
 
 - **Sprint 2 - Games library CRUD.** Added the user-scoped `games` table, manual CRUD API, IDOR-safe 404 behavior, wildcard-safe search, and a protected React `/library` page with filters, sorting, pagination, create/edit modal flow, and guarded delete. Steam OpenID/import remains the next Phase 2 sub-phase.
+- **Sprint 2b - Steam OpenID + Web API integration.** Added Steam account linking via OpenID and vanity fallback, transactional `/api/steam/sync`, nightly `steam:sync-all`, Redis-backed Steam response caching, and a dashboard Steam panel with connect/sync actions plus targeted privacy-settings guidance for the "Profile" and "Game Details" toggles.
 
 ## Screenshots
 

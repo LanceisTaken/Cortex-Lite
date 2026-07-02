@@ -8,15 +8,23 @@ System design and infrastructure. Update when adding or removing services, chang
 
 ## Database schema (high-level)
 
-- `users` own account/auth state, including Cashier columns installed in Phase 1.
-- `games` is a user-scoped library table. It stores manual entries now and is shaped for the later Steam sync path: nullable `steam_app_id`, `source` (`manual` or `steam`), `metadata_status` (`pending`, `ok`, `missing`), nullable `cover_url`, status (`playing`, `backlog`, `completed`, `dropped`), and `playtime_minutes`. `user_id` cascades on delete.
+- `users` own account/auth state, including Cashier columns installed in Phase 1 plus nullable Steam linkage fields: `steam_id` (unique SteamID64 string) and `steam_id_resolved_at`.
+- `games` is a user-scoped library table for both manual and Steam-imported entries. Steam sync keys rows by `(user_id, steam_app_id)` so repeat syncs update the same Steam-owned row without touching manual rows with null `steam_app_id`.
 - Game library list queries are indexed by `(user_id, status)` and `(user_id, last_played_at)`.
 
 ## AWS infrastructure (Phase 6+)
 
 ## External integrations
 
+- Steam OpenID connects an already-authenticated Cortex Lite user to a SteamID64. It does not replace Sanctum.
+- Steam Web API traffic is wrapped behind `App\Services\SteamClient` for `ResolveVanityURL`, `GetPlayerSummaries`, and `GetOwnedGames`.
+- Steam API responses are cached in Redis: owned games for 1 hour, player summaries for 60 seconds so privacy-setting fixes can recover quickly.
+
 ## Security model
+
+- First-party auth remains Sanctum SPA cookies plus CSRF. Steam is an attached external identity only.
+- Steam OpenID verification always posts `check_authentication` to the hard-coded Steam endpoint, never to a request-supplied URL.
+- Steam sync writes are transactional and only update server-owned Steam fields on `games`.
 
 ## Authentication
 
@@ -40,6 +48,10 @@ Cookie-based Sanctum SPA auth. React (dev on Vite `:5173`, prod behind nginx) tr
 | POST | /api/email/verify/{id}/{hash} | auth:sanctum, signed, throttle:6,1 | SPA re-POSTs the signed URL |
 | POST | /api/email/verification-notification | auth:sanctum, throttle:6,1 | resend |
 | DELETE | /api/account | auth:sanctum | via DeleteAccountAction (transaction: Cashier cancelNow → delete) |
+| GET  | /api/steam/login | auth:sanctum | redirect to Steam OpenID |
+| GET  | /api/steam/callback | auth:sanctum | attach verified SteamID64, then redirect to `/dashboard` |
+| POST | /api/steam/connect-vanity | auth:sanctum | manual Steam fallback via ResolveVanityURL |
+| POST | /api/steam/sync | auth:sanctum | transactional Steam library sync |
 
 **Notification URL rewriting:**
 `VerifyEmail::createUrlUsing` and `ResetPassword::createUrlUsing` in `AppServiceProvider::boot()` rewrite the notification URLs to point at the frontend routes. The SPA verification page POSTs the preserved signed URL back to the backend to complete the flow.

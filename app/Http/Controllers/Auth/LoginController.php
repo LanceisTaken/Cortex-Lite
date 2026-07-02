@@ -26,7 +26,7 @@ class LoginController extends Controller
         $user = $request->user();
 
         return response()->json(
-            $user->only('id', 'name', 'email', 'email_verified_at', 'created_at'),
+            $user->only('id', 'name', 'email', 'email_verified_at', 'steam_id', 'steam_id_resolved_at', 'created_at'),
             200
         );
     }
