@@ -2,6 +2,14 @@
 
 Most recent first.
 
+## [2026-07-02] Cortex Lite — Phase 2 games CRUD verified against plan, committed
+
+Verified the working-tree implementation (already written, uncommitted) against `.code-foundations/plans/2026-07-02-phase-2-games-crud.md`: migration, `Game` model (`#[Fillable]`/`#[Hidden]` attributes, forward-compat Steam columns), `GameController` (index/store/update/destroy, IDOR-safe 404s, wildcard-escaped search via `LIKE ? ESCAPE '!'`), `StoreGameRequest`/`UpdateGameRequest`, and the React `/library` page (filters, 300ms-debounced search with `AbortController`, sort, pagination, create/edit modal with 422 field-error mapping, type-to-confirm delete modal) all matched spec. Found one gap: `CLAUDE.md`'s phase tracker still had Phase 2 unchecked — fixed, then discovered `CLAUDE.md` is gitignored (never tracked), so that edit is local-only and won't appear in the commit. `make test` → 68 passed (34 pre-existing + 26 new games tests + 8 others, incl. `test_delete_account_cascades_games_via_fk`); `oxlint` clean (one pre-existing warning in `AuthContext.jsx`, unrelated to this diff). Committed as `dfbd2b0` (`[Sprint 2] add games library manual CRUD (backend + React UI)`). `AGENTS.md` shows as modified in git status but is byte-identical modulo CRLF — left uncommitted, not part of this work. Frontend manual browser smoke-test (DW-2.9) intentionally deferred per user — not yet done.
+
+→ commit `dfbd2b0` on branch `Phase-2`
+
+---
+
 ## [2026-07-01] Cortex Lite — Phase 1 finished: reviewed, pushed, PR pending
 
 Ran the final whole-branch review (opus) across all 14 Phase 1 tasks before handoff — found one Important issue: a leftover `Route::get('/user', ...)` from `install:api` scaffolding that duplicated `/api/me` but leaked Cashier columns (`stripe_id`, `pm_type`, etc.) with no `#[Hidden]` filtering. Fixed in `57dfe1f`. Committed the implementation plan doc itself (`docs/superpowers/plans/2026-07-01-phase-1-auth.md`, commit `d850f96`) which had been used to drive all 14 subagent-driven tasks but never staged. Pushed `Phase-1` to `origin/Phase-1` (head `d850f96`, 16 sprint-tagged commits ahead of `main`). **PR not yet opened** — no `gh` CLI in this shell; gave the user the compare URL and a ready-to-paste PR body instead.
