@@ -2,6 +2,14 @@
 
 Most recent first.
 
+## [2026-07-02] Cortex Lite — Phase 2 Steam OpenID + sync committed
+
+Reviewed the current `Phase-2` working tree, confirmed the uncommitted slice was the Steam integration follow-up, and committed the implementation as `669ce5c` (`[Sprint 2] add Steam OpenID auth and library sync`). The commit includes the Phase 2 Steam plan, OpenID connect/callback flow, vanity-name connect request path, sync controller + `steam:sync-all` command, Steam service layer (`SteamClient`, `SteamOpenIdVerifier`, `SteamLibrarySynchronizer`), privacy/API exception types, user/game schema updates for Steam identifiers, dashboard/library UI updates including the private-profile error state, and feature/unit coverage for OpenID, vanity connect, schema, sync, command, and Steam service behavior. Docs were included in the same commit (`README.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/TROUBLESHOOTING.md`). `AGENTS.md` still appears modified in git status, but only as the pre-existing line-ending-only noise, so it was intentionally left out.
+
+→ commit `669ce5c` on branch `Phase-2`
+
+---
+
 ## [2026-07-02] Cortex Lite — Phase 2 frontend manual smoke test done
 
 Manual browser smoke test (DW-2.9) completed against the `/library` page: empty state, create/validation, filters (status/search/sort), edit, type-to-confirm delete, and network-tab verification of cookie auth + response shape all walked through per the flow given to the user. This closes the last open item from the previous entry — Phase 2 (manual CRUD sub-phase) is now fully done, pending only the separate Steam sync follow-up plan.
