@@ -47,8 +47,7 @@ export function PlaySessionProvider({ children }) {
   const start = useCallback(async (gameId) => {
     setError(null)
     const session = await startSession(gameId)
-    const activeSession = await getActiveSession()
-    setActive(activeSession ?? session)
+    setActive(session)
     return session
   }, [])
 

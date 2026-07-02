@@ -26,6 +26,7 @@ class StartPlaySessionTest extends TestCase
             ->postJson('/api/sessions/start', ['game_id' => $game->id])
             ->assertCreated()
             ->assertJsonPath('game_id', $game->id)
+            ->assertJsonPath('game.id', $game->id)
             ->assertJsonMissingPath('user_id')
             ->assertJsonPath('ended_at', null)
             ->assertJsonPath('duration_seconds', null);

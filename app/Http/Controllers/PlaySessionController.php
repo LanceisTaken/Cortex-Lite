@@ -27,7 +27,9 @@ class PlaySessionController extends Controller
             ], 409);
         }
 
-        return response()->json($session->only(PlaySession::RESPONSE_FIELDS), 201);
+        $session->load(['game' => fn ($query) => $query->select(['id', 'title', 'cover_url', 'steam_app_id'])]);
+
+        return response()->json($this->serialize($session), 201);
     }
 
     public function end(Request $request, PlaySession $session, EndPlaySessionAction $action): JsonResponse
@@ -69,9 +71,15 @@ class PlaySessionController extends Controller
             ->orderByDesc('ended_at')
             ->paginate(15);
 
+        $trackedTotals = $request->user()->playSessions()
+            ->whereNotNull('ended_at')
+            ->selectRaw('game_id, sum(duration_seconds) as duration_seconds_total')
+            ->groupBy('game_id')
+            ->pluck('duration_seconds_total', 'game_id');
+
         return response()->json([
             'data' => collect($sessions->items())
-                ->map(fn (PlaySession $session) => $this->serialize($session))
+                ->map(fn (PlaySession $session) => $this->serialize($session, $trackedTotals))
                 ->all(),
             'meta' => [
                 'current_page' => $sessions->currentPage(),
@@ -82,11 +90,17 @@ class PlaySessionController extends Controller
         ]);
     }
 
-    private function serialize(PlaySession $session): array
+    private function serialize(PlaySession $session, $trackedTotals = null): array
     {
+        $game = $session->game?->only(['id', 'title', 'cover_url', 'steam_app_id']);
+
+        if ($game !== null && $trackedTotals !== null) {
+            $game['tracked_duration_seconds_total'] = (int) ($trackedTotals[$session->game_id] ?? 0);
+        }
+
         return [
             ...$session->only(PlaySession::RESPONSE_FIELDS),
-            'game' => $session->game?->only(['id', 'title', 'cover_url', 'steam_app_id']),
+            'game' => $game,
         ];
     }
 }

@@ -71,4 +71,26 @@ class PlaySessionHistoryTest extends TestCase
             ->assertJsonPath('meta.total', 16)
             ->assertJsonCount(15, 'data');
     }
+
+    public function test_history_includes_lifetime_tracked_total_per_game(): void
+    {
+        $user = User::factory()->create();
+        $game = Game::factory()->for($user)->create(['title' => 'Portal 2']);
+        PlaySession::factory()->for($user)->for($game)->create([
+            'started_at' => now()->subDays(2),
+            'ended_at' => now()->subDays(2)->addHour(),
+            'duration_seconds' => 3600,
+        ]);
+        PlaySession::factory()->for($user)->for($game)->create([
+            'started_at' => now()->subDay(),
+            'ended_at' => now()->subDay()->addMinutes(30),
+            'duration_seconds' => 1800,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson('/api/sessions')
+            ->assertOk()
+            ->assertJsonPath('data.0.game.title', 'Portal 2')
+            ->assertJsonPath('data.0.game.tracked_duration_seconds_total', 5400);
+    }
 }

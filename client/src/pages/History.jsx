@@ -20,10 +20,15 @@ function groupByGame(sessions) {
   const map = new Map()
   for (const session of sessions) {
     const key = session.game?.id ?? 'unknown'
-    if (!map.has(key)) map.set(key, { game: session.game, total: 0, sessions: [] })
+    if (!map.has(key)) {
+      map.set(key, {
+        game: session.game,
+        total: session.game?.tracked_duration_seconds_total ?? 0,
+        sessions: [],
+      })
+    }
     const entry = map.get(key)
     entry.sessions.push(session)
-    entry.total += session.duration_seconds ?? 0
   }
   return Array.from(map.values())
 }
