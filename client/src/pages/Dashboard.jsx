@@ -10,6 +10,7 @@ export default function Dashboard() {
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Cortex Lite</h1>
         <div className="flex items-center gap-3 text-sm">
+          <Link to="/library" className="text-slate-600 hover:underline">Library</Link>
           <Link to="/account" className="text-slate-600 hover:underline">Account</Link>
           <button onClick={logout} className="text-slate-600 hover:underline">Log out</button>
         </div>

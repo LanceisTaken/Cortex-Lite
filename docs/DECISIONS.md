@@ -140,3 +140,24 @@ Format per entry:
 **Rationale:** The frontend needs to distinguish "logged in but unverified" (a resolvable, expected state — show the resend-verification banner) from "forbidden" (a real authorization failure — show an error page). Reusing 403 for both would force the SPA to inspect the response body to tell them apart.
 **Alternatives considered:** Keep the framework default 403 and disambiguate client-side via response body inspection (rejected — brittle, couples the frontend to error-message text). Custom header on a 403 (rejected — 409 is the more semantically correct status code for "conflicts with the current state of the resource" and needs no extra parsing).
 **Consequences:** Non-JSON (web) requests keep the standard redirect-to-verification-notice behavior — only the JSON branch changes. Any new route gated by `verified` inherits this behavior automatically.
+
+### Store game playtime in minutes
+**Date:** 2026-07-02
+**Decision:** The `games` table stores playtime as `playtime_minutes`, an unsigned integer. The React UI formats it as hours and minutes for humans.
+**Rationale:** Steam's `playtime_forever` value is already measured in minutes. Matching that unit avoids lossy conversions, fractional-hour rounding, and follow-up migration work when Steam sync lands.
+**Alternatives considered:** `hours_played` as a decimal, matching an early build-plan name (rejected because it diverges from Steam's API contract and makes exact import harder).
+**Consequences:** Manual CRUD accepts minutes directly. Any future chart or session aggregate should convert for presentation only, not change storage units.
+
+### Manual games schema includes Steam-sync fields from day one
+**Date:** 2026-07-02
+**Decision:** Add nullable `steam_app_id`, server-owned `source`, `metadata_status`, and nullable `cover_url` columns in the initial `games` migration even though this sprint only ships manual CRUD.
+**Rationale:** Steam import is the next Phase 2 sub-phase. Including these columns now lets sync code upsert into the same table without another schema change, and lets manual entries later be annotated with a Steam app id.
+**Alternatives considered:** Keep the manual CRUD schema minimal and add a Steam migration later (rejected because it creates avoidable migration churn and a less stable contract for the React library page). Separate manual and Steam game tables (rejected because the library should behave as one user-scoped collection).
+**Consequences:** `source` and `metadata_status` are not accepted from client payloads. The controller sets manual defaults today; Steam sync can set Steam-specific values later.
+
+### Cross-user game access returns 404
+**Date:** 2026-07-02
+**Decision:** `PUT /api/games/{game}` and `DELETE /api/games/{game}` resolve through the authenticated user's `games()` relationship and return 404 for cross-user ids.
+**Rationale:** Returning 403 would confirm that another user's game id exists. A 404 preserves resource opacity and matches the IDOR testing rule for user-owned endpoints.
+**Alternatives considered:** Policies returning 403 (rejected for existence disclosure). Globally scoped route-model binding (deferred; explicit user-scoped lookup in the controller is clearer for this first resource).
+**Consequences:** Tests assert 404, not 403, for cross-user update and delete. Future user-owned resources should follow the same response posture unless there is a product reason to reveal existence.

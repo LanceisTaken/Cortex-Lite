@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\GameController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,3 +45,7 @@ Route::post('/reset-password', [NewPasswordController::class, 'store'])
 Route::delete('/account', [AccountController::class, 'destroy'])
     ->middleware('auth:sanctum')
     ->name('account.destroy');
+
+Route::apiResource('games', GameController::class)
+    ->middleware('auth:sanctum')
+    ->except(['show']);

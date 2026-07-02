@@ -71,3 +71,7 @@ This mirrors the SPA's real request pattern (browser sets `Origin` on cross-orig
 ### PHPUnit `withMiddleware(ValidateCsrfToken::class)` doesn't actually enable CSRF checks in tests
 **Cause:** Laravel's `PreventRequestForgery::runningUnitTests()` short-circuits CSRF verification whenever `$app['env'] === 'testing'`, which is true for the entire PHPUnit run — `withMiddleware()`/`withoutMiddleware()` never come into play for this check.
 **Fix:** For a specific test that must verify CSRF rejection, temporarily set `$this->app['env'] = 'production'` right before the assertion. This is safe because Laravel recreates `$this->app` per test method via `tearDownTheTestEnvironment()`, so the mutation cannot leak into other tests. See `tests/Feature/Auth/CsrfTest.php::test_missing_csrf_token_is_rejected_on_web_login_route`.
+
+### Escaped `%` and `_` game title searches return zero rows or 500 in tests
+**Cause:** SQL `LIKE` wildcard escaping is database-specific if the escape character is only implied. Backslash escaping produced different behavior between SQLite test runs and MySQL, and SQLite rejected an `ESCAPE '\\'` clause as a two-character escape expression.
+**Fix:** Use an explicit portable escape character that does not need special SQL string handling. The games index search escapes `!`, `%`, and `_`, then queries with `title like ? escape '!'`.

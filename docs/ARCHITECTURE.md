@@ -8,6 +8,10 @@ System design and infrastructure. Update when adding or removing services, chang
 
 ## Database schema (high-level)
 
+- `users` own account/auth state, including Cashier columns installed in Phase 1.
+- `games` is a user-scoped library table. It stores manual entries now and is shaped for the later Steam sync path: nullable `steam_app_id`, `source` (`manual` or `steam`), `metadata_status` (`pending`, `ok`, `missing`), nullable `cover_url`, status (`playing`, `backlog`, `completed`, `dropped`), and `playtime_minutes`. `user_id` cascades on delete.
+- Game library list queries are indexed by `(user_id, status)` and `(user_id, last_played_at)`.
+
 ## AWS infrastructure (Phase 6+)
 
 ## External integrations
