@@ -2,6 +2,12 @@
 
 Most recent first.
 
+## [2026-07-02] Cortex Lite — Phase 2 frontend manual smoke test done
+
+Manual browser smoke test (DW-2.9) completed against the `/library` page: empty state, create/validation, filters (status/search/sort), edit, type-to-confirm delete, and network-tab verification of cookie auth + response shape all walked through per the flow given to the user. This closes the last open item from the previous entry — Phase 2 (manual CRUD sub-phase) is now fully done, pending only the separate Steam sync follow-up plan.
+
+---
+
 ## [2026-07-02] Cortex Lite — Phase 2 games CRUD verified against plan, committed
 
 Verified the working-tree implementation (already written, uncommitted) against `.code-foundations/plans/2026-07-02-phase-2-games-crud.md`: migration, `Game` model (`#[Fillable]`/`#[Hidden]` attributes, forward-compat Steam columns), `GameController` (index/store/update/destroy, IDOR-safe 404s, wildcard-escaped search via `LIKE ? ESCAPE '!'`), `StoreGameRequest`/`UpdateGameRequest`, and the React `/library` page (filters, 300ms-debounced search with `AbortController`, sort, pagination, create/edit modal with 422 field-error mapping, type-to-confirm delete modal) all matched spec. Found one gap: `CLAUDE.md`'s phase tracker still had Phase 2 unchecked — fixed, then discovered `CLAUDE.md` is gitignored (never tracked), so that edit is local-only and won't appear in the commit. `make test` → 68 passed (34 pre-existing + 26 new games tests + 8 others, incl. `test_delete_account_cascades_games_via_fk`); `oxlint` clean (one pre-existing warning in `AuthContext.jsx`, unrelated to this diff). Committed as `dfbd2b0` (`[Sprint 2] add games library manual CRUD (backend + React UI)`). `AGENTS.md` shows as modified in git status but is byte-identical modulo CRLF — left uncommitted, not part of this work. Frontend manual browser smoke-test (DW-2.9) intentionally deferred per user — not yet done.
