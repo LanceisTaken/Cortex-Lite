@@ -9,9 +9,9 @@ import { SteamPrivateProfileError } from '../components/steam/SteamPrivateProfil
 export default function Dashboard() {
   const { user, logout, refresh } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [vanity, setVanity] = useState('')
+  const [steamIdInput, setSteamIdInput] = useState('')
   const [syncing, setSyncing] = useState(false)
-  const [connectingVanity, setConnectingVanity] = useState(false)
+  const [connectingSteamId, setConnectingSteamId] = useState(false)
   const [notice, setNotice] = useState(() => {
     if (searchParams.get('steam_connected') === '1') {
       return { type: 'success', message: 'Steam connected. You can sync your library now.' }
@@ -24,7 +24,7 @@ export default function Dashboard() {
     }
 
     if (errorCode === 'steam_openid_verification_failed') {
-      return { type: 'error', message: 'Steam could not verify the OpenID callback. Try connecting again or use the vanity fallback below.' }
+      return { type: 'error', message: 'Steam could not verify the OpenID callback. Try connecting again or enter your SteamID64 below.' }
     }
 
     return null
@@ -74,25 +74,25 @@ export default function Dashboard() {
     }
   }
 
-  async function handleVanityConnect(event) {
+  async function handleSteamIdConnect(event) {
     event.preventDefault()
-    setConnectingVanity(true)
+    setConnectingSteamId(true)
     setNotice(null)
 
     try {
-      await api.post('/api/steam/connect-vanity', { vanity })
+      await api.post('/api/steam/connect-id', { steam_id: steamIdInput.trim() })
       await refresh()
-      setVanity('')
+      setSteamIdInput('')
       setPrivateProfileHelp(null)
       setNotice({
         type: 'success',
-        message: 'Steam account connected from vanity URL. You can sync your library now.',
+        message: 'Steam account connected from SteamID64. You can sync your library now.',
       })
     } catch (error) {
       if (error.response?.status === 422) {
         setNotice({
           type: 'error',
-          message: error.response.data.message ?? 'Steam vanity lookup failed.',
+          message: error.response?.data?.message ?? 'Enter a valid SteamID64 to connect your Steam account.',
         })
       } else if (error.response?.status === 409) {
         setNotice({
@@ -106,7 +106,7 @@ export default function Dashboard() {
         })
       }
     } finally {
-      setConnectingVanity(false)
+      setConnectingSteamId(false)
     }
   }
 
@@ -175,25 +175,26 @@ export default function Dashboard() {
         ) : null}
 
         {!user.steam_id ? (
-          <form className="mt-6 space-y-3 rounded-md border border-slate-200 bg-slate-50 p-4" onSubmit={handleVanityConnect}>
+          <form className="mt-6 space-y-3 rounded-md border border-slate-200 bg-slate-50 p-4" onSubmit={handleSteamIdConnect}>
             <div>
               <h3 className="font-medium text-slate-900">Manual fallback</h3>
               <p className="mt-1 text-sm text-slate-600">
-                Paste a Steam vanity URL or handle if the OpenID redirect is awkward during the demo.
+                Enter your SteamID64 if the OpenID redirect is awkward during the demo.
               </p>
             </div>
-            <label className="block text-sm font-medium text-slate-700" htmlFor="steam-vanity">
-              Vanity URL or handle
+            <label className="block text-sm font-medium text-slate-700" htmlFor="steam-id">
+              SteamID64
             </label>
             <input
-              id="steam-vanity"
+              id="steam-id"
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-0 transition focus:border-slate-900"
-              onChange={(event) => setVanity(event.target.value)}
-              placeholder="https://steamcommunity.com/id/your-handle/"
-              value={vanity}
+              inputMode="numeric"
+              onChange={(event) => setSteamIdInput(event.target.value)}
+              placeholder="76561198000000000"
+              value={steamIdInput}
             />
-            <Button type="submit" disabled={connectingVanity || vanity.trim() === ''}>
-              {connectingVanity ? 'Connecting…' : 'Connect With Vanity'}
+            <Button type="submit" disabled={connectingSteamId || steamIdInput.trim() === ''}>
+              {connectingSteamId ? 'Connecting…' : 'Connect With SteamID64'}
             </Button>
           </form>
         ) : null}

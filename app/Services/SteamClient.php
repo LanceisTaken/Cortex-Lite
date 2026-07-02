@@ -91,42 +91,6 @@ class SteamClient
         );
     }
 
-    public function resolveVanityUrl(string $vanity): ?string
-    {
-        $normalized = $this->normalizeVanity($vanity);
-
-        if ($normalized === null) {
-            return null;
-        }
-
-        return Cache::remember(
-            $this->vanityCacheKey($normalized),
-            self::OWNED_GAMES_TTL_SECONDS,
-            function () use ($normalized): ?string {
-                $payload = $this->decodeResponse(
-                    $this->apiGet('/ISteamUser/ResolveVanityURL/v0001/', [
-                        'vanityurl' => $normalized,
-                        'format' => 'json',
-                    ])
-                );
-
-                $response = $payload['response'] ?? null;
-
-                if (! is_array($response)) {
-                    throw SteamApiException::badGateway('Steam vanity response was malformed.');
-                }
-
-                if (($response['success'] ?? null) !== 1) {
-                    return null;
-                }
-
-                $steamId = $response['steamid'] ?? null;
-
-                return is_string($steamId) ? $steamId : null;
-            }
-        );
-    }
-
     public function ownedGamesCacheKey(string $steamId): string
     {
         return 'steam:owned_games:'.sha1($steamId);
@@ -135,11 +99,6 @@ class SteamClient
     public function playerSummaryCacheKey(string $steamId): string
     {
         return 'steam:summary:'.sha1($steamId);
-    }
-
-    public function vanityCacheKey(string $normalizedVanity): string
-    {
-        return 'steam:vanity:'.sha1($normalizedVanity);
     }
 
     public function playerSummaryTtlSeconds(): int
@@ -174,27 +133,6 @@ class SteamClient
         }
 
         return $decoded;
-    }
-
-    private function normalizeVanity(string $vanity): ?string
-    {
-        $trimmed = trim($vanity);
-
-        if ($trimmed === '') {
-            return null;
-        }
-
-        if (filter_var($trimmed, FILTER_VALIDATE_URL)) {
-            $path = trim((string) parse_url($trimmed, PHP_URL_PATH), '/');
-            $segments = array_values(array_filter(explode('/', $path)));
-            $trimmed = end($segments) ?: '';
-        }
-
-        if ($trimmed === '' || preg_match('/^[A-Za-z0-9_-]{1,32}$/', $trimmed) !== 1) {
-            return null;
-        }
-
-        return $trimmed;
     }
 
     private function buildCoverUrl(array $game): ?string

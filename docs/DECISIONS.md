@@ -189,3 +189,10 @@ Format per entry:
 **Rationale:** The scheduler container already exists from Phase 0, so nightly sync adds no new infrastructure. A daily refresh keeps the demo library reasonably fresh without needing WebSockets or progress infrastructure in Phase 2.
 **Alternatives considered:** On-demand sync only (rejected because the scheduler service would remain unused and the Steam story would feel incomplete). Higher-frequency polling (rejected because it adds unnecessary API churn for a portfolio app).
 **Consequences:** The batch command must continue past per-user failures and log warnings instead of aborting the run. The command becomes a reusable operational seam for later monitoring in Phase 6.
+
+### Manual Steam fallback uses direct SteamID64 entry
+**Date:** 2026-07-02
+**Decision:** Replace the manual Steam fallback with direct SteamID64 entry instead of Steam vanity URL resolution.
+**Rationale:** Vanity URLs are an optional Steam profile customization, not a universal identifier users can reliably copy from a normal profile link. Asking for SteamID64 is more explicit and avoids a second Steam API dependency just to translate user input before syncing.
+**Alternatives considered:** Keep vanity resolution as the fallback (rejected because many users do not have a vanity URL configured, which makes the fallback confusing at the exact moment it is supposed to unblock them). Support both vanity and SteamID64 inputs (rejected for now because it adds UI and validation complexity without helping the demo path enough).
+**Consequences:** The manual fallback route now validates a 17-digit SteamID64 locally and persists it directly. `SteamClient` no longer wraps `ResolveVanityURL`, so the Steam service surface is smaller and the tests focus on linking and sync behavior instead of profile-handle translation.

@@ -17,7 +17,7 @@ System design and infrastructure. Update when adding or removing services, chang
 ## External integrations
 
 - Steam OpenID connects an already-authenticated Cortex Lite user to a SteamID64. It does not replace Sanctum.
-- Steam Web API traffic is wrapped behind `App\Services\SteamClient` for `ResolveVanityURL`, `GetPlayerSummaries`, and `GetOwnedGames`.
+- Steam Web API traffic is wrapped behind `App\Services\SteamClient` for `GetPlayerSummaries` and `GetOwnedGames`.
 - Steam API responses are cached in Redis: owned games for 1 hour, player summaries for 60 seconds so privacy-setting fixes can recover quickly.
 
 ## Security model
@@ -50,7 +50,7 @@ Cookie-based Sanctum SPA auth. React (dev on Vite `:5173`, prod behind nginx) tr
 | DELETE | /api/account | auth:sanctum | via DeleteAccountAction (transaction: Cashier cancelNow → delete) |
 | GET  | /api/steam/login | auth:sanctum | redirect to Steam OpenID |
 | GET  | /api/steam/callback | auth:sanctum | attach verified SteamID64, then redirect to `/dashboard` |
-| POST | /api/steam/connect-vanity | auth:sanctum | manual Steam fallback via ResolveVanityURL |
+| POST | /api/steam/connect-id | auth:sanctum | manual Steam fallback via direct SteamID64 entry |
 | POST | /api/steam/sync | auth:sanctum | transactional Steam library sync |
 
 **Notification URL rewriting:**

@@ -4,16 +4,16 @@ namespace App\Http\Requests\Steam;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ConnectVanityRequest extends FormRequest
+class ConnectSteamIdRequest extends FormRequest
 {
     public function rules(): array
     {
         return [
-            'vanity' => [
+            'steam_id' => [
                 'required',
                 'string',
-                'max:255',
-                'regex:/^(?:[A-Za-z0-9_-]{1,32}|https?:\/\/steamcommunity\.com\/id\/[A-Za-z0-9_-]{1,32}\/?)$/',
+                'size:17',
+                'regex:/^7656119\d{10}$/',
             ],
         ];
     }

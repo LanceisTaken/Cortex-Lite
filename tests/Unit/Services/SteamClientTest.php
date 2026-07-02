@@ -89,19 +89,6 @@ class SteamClientTest extends TestCase
         );
     }
 
-    public function test_resolve_vanity_url_returns_null_when_steam_cannot_resolve_it(): void
-    {
-        Http::fake([
-            'https://api.steampowered.com/*' => Http::response([
-                'response' => [
-                    'success' => 42,
-                ],
-            ]),
-        ]);
-
-        $this->assertNull(app(SteamClient::class)->resolveVanityUrl('missing-handle'));
-    }
-
     public function test_get_player_summary_returns_raw_payload(): void
     {
         Http::fake([
@@ -153,15 +140,6 @@ class SteamClientTest extends TestCase
         $this->expectException(SteamPrivateLibraryException::class);
 
         app(SteamClient::class)->getOwnedGames('76561198000000000');
-    }
-
-    public function test_invalid_vanity_input_returns_null_without_hitting_steam(): void
-    {
-        Http::fake();
-
-        $this->assertNull(app(SteamClient::class)->resolveVanityUrl('bad vanity !!!'));
-
-        Http::assertNothingSent();
     }
 
     public function test_private_library_exceptions_are_not_cached(): void
@@ -233,23 +211,4 @@ class SteamClientTest extends TestCase
         );
     }
 
-    public function test_full_profile_url_vanity_input_is_normalized_before_lookup(): void
-    {
-        Http::fake([
-            'https://api.steampowered.com/*' => Http::response([
-                'response' => [
-                    'success' => 1,
-                    'steamid' => '76561198000000000',
-                ],
-            ]),
-        ]);
-
-        $steamId = app(SteamClient::class)->resolveVanityUrl('https://steamcommunity.com/id/test-handle/');
-
-        $this->assertSame('76561198000000000', $steamId);
-
-        Http::assertSent(function ($request): bool {
-            return $request['vanityurl'] === 'test-handle';
-        });
-    }
 }

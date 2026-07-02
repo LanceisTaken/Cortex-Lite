@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Steam\ConnectVanityRequest;
+use App\Http\Requests\Steam\ConnectSteamIdRequest;
 use App\Models\User;
-use App\Services\SteamClient;
 use App\Services\SteamOpenIdVerifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -52,17 +51,9 @@ class SteamAuthController extends Controller
         ]));
     }
 
-    public function connectVanity(ConnectVanityRequest $request, SteamClient $steamClient): JsonResponse
+    public function connectSteamId(ConnectSteamIdRequest $request): JsonResponse
     {
-        $steamId = $steamClient->resolveVanityUrl($request->validated('vanity'));
-
-        if ($steamId === null) {
-            return response()->json([
-                'error_code' => 'steam_vanity_unresolved',
-                'message' => 'We could not resolve that Steam vanity URL or handle.',
-                'help_url' => 'https://steamcommunity.com/my/edit/settings',
-            ], 422);
-        }
+        $steamId = $request->validated('steam_id');
 
         $result = $this->persistSteamId($request->user(), $steamId);
 

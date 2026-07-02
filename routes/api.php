@@ -56,9 +56,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/steam/login', [SteamAuthController::class, 'login'])
         ->middleware('throttle:6,1')
         ->name('steam.login');
-    Route::post('/steam/connect-vanity', [SteamAuthController::class, 'connectVanity'])
+    Route::post('/steam/connect-id', [SteamAuthController::class, 'connectSteamId'])
         ->middleware('throttle:6,1')
-        ->name('steam.connect-vanity');
+        ->name('steam.connect-id');
     Route::post('/steam/sync', [SteamSyncController::class, 'store'])
         ->middleware('throttle:6,1')
         ->name('steam.sync');
