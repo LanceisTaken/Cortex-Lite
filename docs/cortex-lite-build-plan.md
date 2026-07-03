@@ -188,10 +188,10 @@
 
 ### Phase 4.0 — Spike (1 day, before committing to the rest of Phase 4)
 
-- [ ] **Verify PCGamingWiki's actual rate-limit policy.** Read [https://www.pcgamingwiki.com/wiki/PCGamingWiki:API](https://www.pcgamingwiki.com/wiki/PCGamingWiki:API) and record the verified policy in `DECISIONS.md`. If no published per-minute number, document the conservative throttle chosen (e.g., 30/min, half a connection-pool's worth).
-- [ ] **Test the Steam app ID → wiki page mapping for 10 random Steam app IDs** spanning AAA, indie, and old titles. PCGamingWiki pages are keyed by game name, not Steam app ID directly. The lookup uses a Cargo query against the `Infobox_game` table where `Steam_AppID` matches. Record the hit rate (expect ~70–90%). If under 70%, switch to plan B for Phase 4.
-- [ ] **Decision gate.** If both checks pass (verified rate limit, ≥70% lookup hit rate), proceed with the PCGamingWiki integration as planned. If either fails, fall through to plan B: anchor dataset + heuristic engine fed by hand-curated graphics-options metadata for the 10 anchor games, with an honest README note.
-- [ ] Update `DECISIONS.md` with the spike findings and the chosen path.
+- [x] **Verify PCGamingWiki's actual rate-limit policy.** Read [https://www.pcgamingwiki.com/wiki/PCGamingWiki:API](https://www.pcgamingwiki.com/wiki/PCGamingWiki:API) and record the verified policy in `DECISIONS.md`. If no published per-minute number, document the conservative throttle chosen (e.g., 30/min, half a connection-pool's worth).
+- [x] **Test the Steam app ID → wiki page mapping for 10 random Steam app IDs** spanning AAA, indie, and old titles. PCGamingWiki pages are keyed by game name, not Steam app ID directly. The lookup uses a Cargo query against the `Infobox_game` table where `Steam_AppID` matches. Record the hit rate (expect ~70–90%). If under 70%, switch to plan B for Phase 4.
+- [x] **Decision gate.** If both checks pass (verified rate limit, ≥70% lookup hit rate), proceed with the PCGamingWiki integration as planned. If either fails, fall through to plan B: anchor dataset + heuristic engine fed by hand-curated graphics-options metadata for the 10 anchor games, with an honest README note.
+- [x] Update `DECISIONS.md` with the spike findings and the chosen path.
 
 ### Hardware tier database
 

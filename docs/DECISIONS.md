@@ -217,3 +217,10 @@ Format per entry:
 **Rationale:** Laravel's database session driver already occupies the `sessions` table via the framework migration. Reusing the name would collide with HTTP session storage.
 **Alternatives considered:** Switching the session driver to file/Redis to free the name (rejected because it changes the established Sanctum session setup). Keeping the URL and table both named `sessions` (rejected because the DB table would be ambiguous and unsafe).
 **Consequences:** Slight internal-vs-URL naming divergence; documented here to prevent confusion.
+
+### Phase 4.0 spike: PCGamingWiki integration go/no-go
+**Date:** 2026-07-03
+**Decision:** Proceed with PCGamingWiki integration.
+**Rationale:** Two pre-defined checks gated this decision. (1) Rate limit: PCGamingWiki's API page publishes a firm limit of 30 requests/minute, enforced with HTTP 429 on excess, and requires a custom User-Agent with contact info - this is verified, not assumed. (2) Steam App ID -> wiki page hit rate: tested against 10 Steam App IDs spanning AAA, indie, and old titles via the Infobox_game Cargo table; 10/10 resolved (100%). The 70% threshold set in the build plan was met.
+**Alternatives considered:** Scraping wiki article markdown directly instead of the Cargo API - rejected, Cargo returns structured fields directly and is far cleaner. Guessing a conservative rate limit - unnecessary, a real published number exists.
+**Consequences:** PcGamingWikiClient will throttle to 30 req/min with a token-bucket limiter and cache responses in Redis (7-day TTL), per the existing Phase 4 plan.

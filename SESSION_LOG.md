@@ -2,6 +2,14 @@
 
 Most recent first.
 
+## [2026-07-03] Cortex Lite - Phase 4.0 PCGamingWiki spike closed
+
+Ran the Phase 4.0 hit-rate test from inside the app container via `make shell`, using Laravel's HTTP client against PCGamingWiki's Cargo API with a custom CortexLite User-Agent and the required 2.1s delay between requests. All 10 Steam App IDs resolved through `Infobox_game.Steam_AppID` (10/10, 100%): Cyberpunk 2077, Elden Ring, GTA V, Half-Life 2, Garry's Mod, Deus Ex, Civilization V, Terraria, Stardew Valley, and Hades. Because the published rate-limit check was already complete (30 requests/minute, HTTP 429 on excess, custom User-Agent required) and the hit rate exceeded the 70% gate, the decision is to proceed with PCGamingWiki integration for the rest of Phase 4. Updated `docs/DECISIONS.md` and checked off the Phase 4.0 spike items in `docs/cortex-lite-build-plan.md`. No Phase 4 application code was written.
+
+-> decision: proceed with PCGamingWiki integration
+
+---
+
 ## [2026-07-02] Cortex Lite - Phase 3 session tracking shipped
 
 Implemented the play-session lifecycle end-to-end: `play_sessions` table (`sessions` was taken by Laravel's HTTP session store), `PlaySession` model, `StartPlaySessionAction` (race-safe via `User::lockForUpdate()` inside a transaction, portable across MySQL 8 and SQLite), `EndPlaySessionAction` (transactional; only bumps `games.playtime_minutes` for `source = 'manual'` games because Steam sync is authoritative for Steam rows), the four endpoints (`POST /api/sessions/start`, `POST /api/sessions/{id}/end`, `GET /api/sessions/active`, `GET /api/sessions` history paginated), and the React side: `PlaySessionContext` with a client-side elapsed-time ticker, a persistent `ActiveSessionBanner` on Dashboard/Library/History, a per-row Start button on Library, and a new `/history` page grouped by game. Docs updated in `DECISIONS.md`, `TROUBLESHOOTING.md`, `ARCHITECTURE.md`, and `README.md`. Verified with `make test` and frontend static checks; browser manual testing intentionally left for the user.
