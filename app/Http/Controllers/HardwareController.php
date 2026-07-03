@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cpu;
 use App\Models\Gpu;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,14 +16,11 @@ class HardwareController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $query = Gpu::query()->select(Gpu::RESPONSE_FIELDS);
-
-        if (! empty($validated['search'])) {
-            $search = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $validated['search']);
-            $query->whereRaw("name like ? escape '!'", ["%{$search}%"]);
-        }
-
-        return response()->json($query->orderByDesc('g3d_mark')->limit(20)->get());
+        return $this->typeahead(
+            Gpu::query()->select(Gpu::RESPONSE_FIELDS),
+            'g3d_mark',
+            $validated['search'] ?? null,
+        );
     }
 
     public function cpus(Request $request): JsonResponse
@@ -31,13 +29,20 @@ class HardwareController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $query = Cpu::query()->select(Cpu::RESPONSE_FIELDS);
+        return $this->typeahead(
+            Cpu::query()->select(Cpu::RESPONSE_FIELDS),
+            'single_thread_mark',
+            $validated['search'] ?? null,
+        );
+    }
 
-        if (! empty($validated['search'])) {
-            $search = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $validated['search']);
+    private function typeahead(Builder $query, string $orderBy, ?string $search): JsonResponse
+    {
+        if (! empty($search)) {
+            $search = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search);
             $query->whereRaw("name like ? escape '!'", ["%{$search}%"]);
         }
 
-        return response()->json($query->orderByDesc('single_thread_mark')->limit(20)->get());
+        return response()->json($query->orderByDesc($orderBy)->limit(20)->get());
     }
 }

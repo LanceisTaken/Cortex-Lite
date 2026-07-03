@@ -15,12 +15,13 @@ export function HardwareAutocomplete({ kind, value, onChange, placeholder }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const abortRef = useRef(null)
   const containerRef = useRef(null)
 
   useEffect(() => {
     if (value) {
       setQuery(value.name)
+    } else {
+      setQuery('')
     }
   }, [value])
 
@@ -41,8 +42,6 @@ export function HardwareAutocomplete({ kind, value, onChange, placeholder }) {
     if (!open) return undefined
 
     const controller = new AbortController()
-    abortRef.current?.abort()
-    abortRef.current = controller
     setLoading(true)
     setError(null)
 
