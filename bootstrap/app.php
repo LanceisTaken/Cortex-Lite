@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('steam:sync-all')->daily()->withoutOverlapping();
+        $schedule->command('games:enrich-metadata')->everyFiveMinutes()->withoutOverlapping()->runInBackground();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();

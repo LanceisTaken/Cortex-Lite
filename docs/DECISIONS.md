@@ -245,3 +245,31 @@ Format per entry:
 **Rationale:** Adding a new GPU is a one-line raw-data edit; the classifier assigns the tier deterministically. Adjusting a threshold is a single-constant edit in the classifier plus a seeder rerun - no JSON churn, no risk of drift between the stored tier and the boundary rules. Symmetrically shaped for CPUs.
 **Alternatives considered:** Store the tier in JSON (rejected - every threshold tweak becomes a mass JSON edit with drift risk). Compute tier on read via an accessor (rejected - the endpoint filters and orders by tier, so having it materialized is faster and simpler).
 **Consequences:** Any change to `GpuTierClassifier::THRESHOLDS` requires `make artisan CMD="db:seed --class=GpuSeeder"` to propagate. Documented in the seeder docblocks.
+
+### Redis token-bucket for PCGamingWiki rate limiting
+**Date:** 2026-07-03
+**Decision:** Use a Redis-backed token bucket with a Lua reservation script for PCGamingWiki's 30 requests/minute quota.
+**Rationale:** The quota is global to the app, not per PHP worker. Laravel's route throttles are request-facing and not shaped around an external API budget, while a Redis script gives one atomic counter across scheduler, queue, and web workers.
+**Alternatives considered:** Laravel's built-in `RateLimiter` facade (rejected because the exact token refill/wait behavior is clearer as a domain limiter). Per-process sleeps (rejected because multiple workers would race and overshoot).
+**Consequences:** Redis is load-bearing for PCGamingWiki metadata ingestion. If Redis is unavailable, enrichment should be treated as operationally down until Redis recovers.
+
+### AppID-only PCGamingWiki cache key with 7-day TTL
+**Date:** 2026-07-03
+**Decision:** Cache PCGamingWiki metadata under `pcgw:metadata:{steam_app_id}` for seven days.
+**Rationale:** PCGamingWiki graphics capability fields change slowly, and the Steam AppID is the only stable input to the Cargo lookup. Keeping timestamps, user ids, or request ids out of the key prevents cache explosion and protects the upstream quota. No-match and malformed-payload misses are cached as a small sentinel and translated back to `null` at the client boundary because Laravel's cache `remember()` treats a cached raw `null` as a miss.
+**Alternatives considered:** Include game title in the key (rejected because titles can change or differ by locale while the lookup is by AppID). No cache and rely only on rate limiting (rejected because repeat syncs would waste quota).
+**Consequences:** A corrected upstream metadata field may take up to seven days to refresh unless the cache key is manually cleared.
+
+### Metadata enrichment failure contract
+**Date:** 2026-07-03
+**Decision:** `PcGamingWikiClient` returns `null` for no-match or malformed Cargo payloads, throws `PcGamingWikiRateLimitException` for 429/backoff, and throws `PcGamingWikiApiException` for hard upstream failures.
+**Rationale:** "Wiki has no usable row" is a durable result that should mark the game `missing`; "we hit the limit" is transient and must leave rows `pending`; hard failures are isolated per game so the batch can continue.
+**Alternatives considered:** Throw for every non-hit (rejected because no-match is expected data, not exceptional control flow). Mark rate-limited rows missing (rejected because one quota event could permanently burn a queue).
+**Consequences:** The ingestion action has a simple state machine: non-null -> `ok`, null/API failure -> `missing`, rate limit -> stop the tick and leave remaining rows `pending`.
+
+### Five-minute PCGamingWiki enrichment cadence
+**Date:** 2026-07-03
+**Decision:** Run `games:enrich-metadata` every five minutes with a default limit of 20 games and `withoutOverlapping()`.
+**Rationale:** The steady-state throughput is 240 games/hour, comfortably below PCGamingWiki's 30 requests/minute ceiling and enough to drain a 100-game library in about 25 minutes without burst-draining the shared token bucket.
+**Alternatives considered:** Drain all pending games immediately after Steam sync (rejected because large libraries can monopolize the external API quota). Hourly batches (rejected because enrichment feedback would feel stale).
+**Consequences:** New Steam imports may show `metadata_status = pending` briefly in the library UI before the scheduled worker catches up.

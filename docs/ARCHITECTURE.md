@@ -12,6 +12,7 @@ System design and infrastructure. Update when adding or removing services, chang
 - `games` is a user-scoped library table for both manual and Steam-imported entries. Steam sync keys rows by `(user_id, steam_app_id)` so repeat syncs update the same Steam-owned row without touching manual rows with null `steam_app_id`.
 - `play_sessions` stores manual tracking history for both manual and Steam games. Open rows have `ended_at = null`; end-session writes are transactional and only increment cached `games.playtime_minutes` for manual-sourced games.
 - `gpus` and `cpus` are small reference tables seeded from `database/data/*.json`. JSON stores raw benchmark values only; `GpuTierClassifier` and `CpuTierClassifier` materialize the tier column at seed time using absolute thresholds.
+- `game_metadata` stores one PCGamingWiki enrichment row per game. It is keyed by unique `game_id`, cascade-deletes with the game, stores structured graphics capability columns, and keeps a capped `raw_response` JSON copy for forward-compatible field additions.
 - Game library list queries are indexed by `(user_id, status)` and `(user_id, last_played_at)`.
 - Session queries are indexed by `(user_id, ended_at)` for active lookup and `(user_id, started_at)` for history ordering.
 - Hardware typeahead queries are indexed by `(tier, g3d_mark)` for GPUs, `(tier, single_thread_mark)` for CPUs, plus unique indexed names.
@@ -23,12 +24,15 @@ System design and infrastructure. Update when adding or removing services, chang
 - Steam OpenID connects an already-authenticated Cortex Lite user to a SteamID64. It does not replace Sanctum.
 - Steam Web API traffic is wrapped behind `App\Services\SteamClient` for `GetPlayerSummaries` and `GetOwnedGames`.
 - Steam API responses are cached in Redis: owned games for 1 hour, player summaries for 60 seconds so privacy-setting fixes can recover quickly.
+- PCGamingWiki Cargo API traffic is wrapped behind `App\Services\PcGamingWikiClient`. Requests use a required Cortex-Lite User-Agent with `PCGAMINGWIKI_CONTACT_EMAIL`, a Redis token-bucket limiter, and a 7-day AppID-only cache key.
+- The scheduler runs `games:enrich-metadata` every five minutes with overlap protection. The command consumes `games.metadata_status = pending`, writes `game_metadata`, and flips each attempted game to `ok` or `missing`; rows blocked by PCGamingWiki rate limiting remain `pending`.
 
 ## Security model
 
 - First-party auth remains Sanctum SPA cookies plus CSRF. Steam is an attached external identity only.
 - Steam OpenID verification always posts `check_authentication` to the hard-coded Steam endpoint, never to a request-supplied URL.
 - Steam sync writes are transactional and only update server-owned Steam fields on `games`.
+- PCGamingWiki raw JSON is capped before persistence to avoid oversized or deeply nested payloads feeding later recommendation code.
 
 ## Authentication
 

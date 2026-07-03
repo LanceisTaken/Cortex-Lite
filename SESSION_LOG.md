@@ -2,6 +2,18 @@
 
 Most recent first.
 
+## [2026-07-03] Cortex Lite - Phase 4 PCGamingWiki metadata enrichment shipped
+
+Implemented and committed the Phase 4 PCGamingWiki metadata integration slice on branch `Phase-4`. The work added a `game_metadata` table/model/factory, PCGamingWiki API client, deterministic AppID-only Redis cache key, Redis-backed token-bucket limiter, fail-fast contact email config, enrichment command (`games:enrich-metadata --limit=20`), scheduler registration every five minutes, and frontend Library metadata status visibility. Steam-sourced games remain fast to sync and are marked `metadata_status='pending'`; the separate enrichment command resolves Steam AppIDs through PCGamingWiki Cargo and flips rows to `ok` or `missing`.
+
+During manual smoke testing, the initial Cargo query was found to be wrong for live PCGamingWiki: `Steam_AppID` is a list field requiring `HOLDS`, the planned video fields are not on `Infobox_game`, and API error payloads can arrive with HTTP 200. Fixed the client to resolve `Infobox_game` page names first, query the `Video` table for HDR / ray tracing / ultrawide / upscaling data, derive DLSS/FSR from `Upscaling`, leave Direct3D/Vulkan as nullable for now, and throw on API error payloads rather than silently marking games missing. Added a temporary Library metadata-status filter (`pending`, `ok`, `missing`) so large Steam libraries can be inspected during Phase 4 debugging; it is useful pipeline visibility, not intended as polished end-user UI long term.
+
+Docs updated in `ARCHITECTURE.md`, `DECISIONS.md`, `TROUBLESHOOTING.md`, `docs/cortex-lite-build-plan.md`, and `README.md`; the implementation plan was added at `.code-foundations/plans/2026-07-03-phase-4-pcgamingwiki-integration.md`. Verified with `make test` -> 203 passed, `npm run lint` -> passed with the pre-existing `AuthContext.jsx` fast-refresh warning, `npm run build` -> passed, and `git diff --check` -> clean.
+
+-> commit `[Sprint 4] add PCGamingWiki metadata enrichment` on branch `Phase-4`
+
+---
+
 ## [2026-07-03] Cortex Lite - Phase 4 hardware tier database shipped
 
 Executed the Phase 4 hardware tier database plan and committed it as `3a8b034` (`[Sprint 4] ship hardware tier database slice`) on branch `Phase-4`, then pushed the branch to origin. The slice added symmetric `gpus` and `cpus` reference tables, Eloquent models/factories, absolute-threshold tier classifiers, idempotent JSON seeders, 61 GPU rows and 40 CPU rows under `database/data/`, and auth-gated typeahead endpoints (`GET /api/hardware/gpus`, `GET /api/hardware/cpus`) backed by wildcard-escaped `LIKE` search and benchmark-desc ordering. The React side added `client/src/lib/hardware.js`, browser hardware hint probing, a reusable `HardwareAutocomplete`, and a protected `/hardware` demo page linked from the Dashboard. Docs were updated in `ARCHITECTURE.md`, `DECISIONS.md`, `docs/cortex-lite-build-plan.md`, and `README.md`; the execution plan file was committed under `docs/superpowers/plans/2026-07-03-phase-4-hardware-tier-database.md`.

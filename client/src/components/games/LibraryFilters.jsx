@@ -15,7 +15,7 @@ export function LibraryFilters({ filters, onChange, onReset }) {
   }, [filters.search, onChange, searchDraft])
 
   return (
-    <div className="grid gap-3 rounded-md border border-slate-200 p-4 md:grid-cols-[1fr_160px_190px_auto]">
+    <div className="grid gap-3 rounded-md border border-slate-200 p-4 md:grid-cols-[1fr_150px_170px_170px_auto]">
       <label className="flex flex-col gap-1 text-sm font-medium">
         Search
         <input
@@ -37,6 +37,19 @@ export function LibraryFilters({ filters, onChange, onReset }) {
           <option value="backlog">Backlog</option>
           <option value="completed">Completed</option>
           <option value="dropped">Dropped</option>
+        </select>
+      </label>
+      <label className="flex flex-col gap-1 text-sm font-medium">
+        Metadata
+        <select
+          value={filters.metadataStatus}
+          onChange={(e) => onChange({ metadataStatus: e.target.value })}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+        >
+          <option value="">All</option>
+          <option value="pending">Pending</option>
+          <option value="ok">Ready</option>
+          <option value="missing">Unavailable</option>
         </select>
       </label>
       <label className="flex flex-col gap-1 text-sm font-medium">

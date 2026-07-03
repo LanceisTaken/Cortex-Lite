@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'title',
@@ -60,5 +61,10 @@ class Game extends Model
     public function playSessions(): HasMany
     {
         return $this->hasMany(PlaySession::class);
+    }
+
+    public function metadata(): HasOne
+    {
+        return $this->hasOne(GameMetadata::class);
     }
 }

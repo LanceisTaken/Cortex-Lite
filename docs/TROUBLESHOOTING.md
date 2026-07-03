@@ -83,3 +83,11 @@ This mirrors the SPA's real request pattern (browser sets `Origin` on cross-orig
 ### After a Steam re-sync, session-tracked minutes appear to reset on a Steam game
 **Cause:** By design. Steam's `playtime_forever` is authoritative for Steam-sourced games and overwrites `games.playtime_minutes` on every scheduled sync. The session record itself is untouched, so the history page still shows the session.
 **Fix:** Not a bug. Per-game totals shown on the history page are computed from `sum(duration_seconds)` over ended sessions, not from `games.playtime_minutes`.
+
+### Games stay at `metadata_status = pending`
+**Cause:** The PCGamingWiki enrichment scheduler is not running, Redis is unavailable, the app is repeatedly hitting the PCGamingWiki rate limiter, or `PCGAMINGWIKI_CONTACT_EMAIL` is missing and the client fails fast.
+**Fix:** Check the scheduler logs with `make logs`, confirm Redis is healthy, and confirm `.env` sets `PCGAMINGWIKI_CONTACT_EMAIL`. Run a manual tick with `make artisan CMD="games:enrich-metadata"` after fixing the environment. Rate-limited rows intentionally remain pending for the next scheduled tick.
+
+### Games show `metadata_status = missing` but should be retried
+**Cause:** The previous enrichment attempt found no Cargo row, received malformed metadata, or hit a hard upstream failure that the portfolio-scope retry policy treats as durable.
+**Fix:** In `make shell`, reset the affected rows to pending and let the scheduler retry: `App\Models\Game::where('metadata_status', 'missing')->update(['metadata_status' => 'pending']);`.

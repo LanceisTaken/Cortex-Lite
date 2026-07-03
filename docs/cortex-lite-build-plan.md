@@ -217,8 +217,8 @@
 - [ ] Build a `PcGamingWikiClient` service class wrapping the MediaWiki **Cargo API** (`?action=cargoquery&format=json&tables=Infobox_game,API,Video&fields=...&where=Infobox_game.Steam_AppID=...`). Cargo returns the structured graphics-options table directly — far cleaner than scraping article markup.
 - [ ] **Respect the verified rate limit strictly** with a token-bucket throttle in `app/Services/RateLimiter/PcGamingWikiLimiter.php`. Custom user-agent string including contact email per their etiquette.
 - [ ] Cache responses aggressively in Redis (7-day TTL).
-- [ ] Schema: `game_metadata` table — `id`, `game_id` (FK), `direct3d_versions`, `vulkan_supported`, `hdr_supported`, `ultrawide_supported`, `dlss_supported`, `fsr_supported`, `ray_tracing_supported`, `raw_response` (JSON for future fields), timestamps.
-- [ ] Scheduled job: for each game with `metadata_status = 'pending'`, look up via PCGamingWiki, persist the result, flip `metadata_status` to `ok` or `missing`. The React library UI shows a small status icon per game so the user understands metadata enrichment is in progress.
+- [x] Schema: `game_metadata` table — `id`, `game_id` (FK), `direct3d_versions`, `vulkan_supported`, `hdr_supported`, `ultrawide_supported`, `dlss_supported`, `fsr_supported`, `ray_tracing_supported`, `raw_response` (JSON for future fields), timestamps.
+- [x] Scheduled job: for each game with `metadata_status = 'pending'`, look up via PCGamingWiki, persist the result, flip `metadata_status` to `ok` or `missing`. The React library UI shows a small status icon per game so the user understands metadata enrichment is in progress.
 - [ ] PHPUnit tests with HTTP fakes: cache hit path, rate-limit-respect path, no-match → `missing` status.
 
 ### Anchor settings dataset

@@ -41,4 +41,9 @@ return [
         'openid_return_url' => env('STEAM_OPENID_RETURN_URL'),
     ],
 
+    'pcgamingwiki' => [
+        'contact_email' => env('PCGAMINGWIKI_CONTACT_EMAIL'),
+        'cache_store' => env('PCGAMINGWIKI_CACHE_STORE', 'redis'),
+    ],
+
 ];

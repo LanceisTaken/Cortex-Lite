@@ -14,6 +14,7 @@ class GameController extends Controller
     {
         $validated = $request->validate([
             'status' => ['nullable', 'in:playing,backlog,completed,dropped'],
+            'metadata_status' => ['nullable', 'in:pending,ok,missing'],
             'search' => ['nullable', 'string', 'max:255'],
             'sort' => ['nullable', 'in:last_played_desc,title_asc,playtime_desc'],
             'page' => ['nullable', 'integer', 'min:1'],
@@ -23,6 +24,10 @@ class GameController extends Controller
 
         if (! empty($validated['status'])) {
             $query->where('status', $validated['status']);
+        }
+
+        if (! empty($validated['metadata_status'])) {
+            $query->where('metadata_status', $validated['metadata_status']);
         }
 
         if (! empty($validated['search'])) {

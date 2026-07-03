@@ -6,11 +6,12 @@ import { FormError } from '../components/ui/FormError'
 import { DeleteGameModal } from '../components/games/DeleteGameModal'
 import { GameFormModal } from '../components/games/GameFormModal'
 import { LibraryFilters } from '../components/games/LibraryFilters'
+import { MetadataStatusBadge } from '../components/games/MetadataStatusBadge'
 import { ActiveSessionBanner } from '../components/sessions/ActiveSessionBanner'
 import { usePlaySession } from '../context/playSessionContextValue'
 import { createGame, deleteGame, listGames, updateGame } from '../lib/games'
 
-const defaultFilters = { status: '', search: '', sort: 'last_played_desc' }
+const defaultFilters = { status: '', metadataStatus: '', search: '', sort: 'last_played_desc' }
 
 function formatPlaytime(minutes) {
   if (!minutes) return '-'
@@ -144,7 +145,7 @@ export default function Library() {
   }
 
   const emptyLibrary = !loading && !error && meta.total === 0
-    && !filters.status && !filters.search && filters.sort === defaultFilters.sort
+    && !filters.status && !filters.metadataStatus && !filters.search && filters.sort === defaultFilters.sort
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
@@ -193,6 +194,7 @@ export default function Library() {
                     <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
                       {statusLabel(game.status)}
                     </span>
+                    <MetadataStatusBadge status={game.metadata_status} />
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
                     <span>{game.platform || 'Unknown platform'}</span>

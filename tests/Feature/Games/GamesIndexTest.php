@@ -56,6 +56,28 @@ class GamesIndexTest extends TestCase
             ->assertJsonPath('data.0.title', 'Finished');
     }
 
+    public function test_index_filters_by_metadata_status(): void
+    {
+        $user = User::factory()->create();
+        Game::factory()->for($user)->create(['title' => 'Ready Game', 'metadata_status' => 'ok']);
+        Game::factory()->for($user)->create(['title' => 'Pending Game', 'metadata_status' => 'pending']);
+
+        $this->actingAs($user)
+            ->getJson('/api/games?metadata_status=ok')
+            ->assertOk()
+            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.title', 'Ready Game');
+    }
+
+    public function test_index_rejects_invalid_metadata_status_422(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->getJson('/api/games?metadata_status=stale')
+            ->assertStatus(422);
+    }
+
     public function test_index_searches_by_title_case_insensitive(): void
     {
         $user = User::factory()->create();

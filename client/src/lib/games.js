@@ -1,9 +1,10 @@
 import { api } from './api'
 
-export async function listGames({ status, search, sort, page, signal } = {}) {
+export async function listGames({ status, metadataStatus, search, sort, page, signal } = {}) {
   const { data } = await api.get('/api/games', {
     params: {
       status: status || undefined,
+      metadata_status: metadataStatus || undefined,
       search: search || undefined,
       sort: sort || undefined,
       page: page || undefined,
