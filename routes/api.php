@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\HardwareController;
 use App\Http\Controllers\PlaySessionController;
 use App\Http\Controllers\SteamAuthController;
 use App\Http\Controllers\SteamSyncController;
@@ -54,6 +55,11 @@ Route::apiResource('games', GameController::class)
     ->except(['show']);
 
 Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('/hardware/gpus', [HardwareController::class, 'gpus'])
+        ->name('hardware.gpus.search');
+    Route::get('/hardware/cpus', [HardwareController::class, 'cpus'])
+        ->name('hardware.cpus.search');
+
     Route::post('/sessions/start', [PlaySessionController::class, 'start'])
         ->middleware('throttle:30,1')
         ->name('sessions.start');

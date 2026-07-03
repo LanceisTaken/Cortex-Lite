@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard'
 import Account from './pages/Account'
 import Library from './pages/Library'
 import History from './pages/History'
+import Hardware from './pages/Hardware'
 
 function GuestOnly({ children }) {
   const { user, loading } = useAuth()
@@ -34,6 +35,7 @@ export default function App() {
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
       <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+      <Route path="/hardware" element={<ProtectedRoute><Hardware /></ProtectedRoute>} />
       <Route path="/account" element={<ProtectedRoute requireVerified={false}><Account /></ProtectedRoute>} />
       <Route path="*" element={<Fallback />} />
     </Routes>

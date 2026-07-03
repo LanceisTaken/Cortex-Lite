@@ -195,22 +195,22 @@
 
 ### Hardware tier database
 
-- [ ] **Hand-curate `gpus.json`** — ~60 GPUs released 2018 onward (Pascal-and-later NVIDIA, Polaris-and-later AMD, plus modern integrated like Iris Xe and Radeon 700M). Each row: `name`, `manufacturer`, `g3d_mark`, `tier`, `released_year`. Tier assignment uses **absolute thresholds**, not percentiles:
+- [x] **Hand-curate `gpus.json`** — ~60 GPUs released 2018 onward (Pascal-and-later NVIDIA, Polaris-and-later AMD, plus modern integrated like Iris Xe and Radeon 700M). Each row: `name`, `manufacturer`, `g3d_mark`, `released_year`; `tier` is derived at seed time. Tier assignment uses **absolute thresholds**, not percentiles:
   - **Low:** G3D Mark < 8,000 (GTX 1050 Ti, 1060 3GB, integrated graphics)
   - **Mid:** 8,000–13,999 (GTX 1660, RTX 2060, RX 5600 XT, RTX 3050)
   - **High:** 14,000–21,999 (RTX 3060/3070, RTX 4060, RX 6700 XT, RX 7600)
   - **Enthusiast:** ≥ 22,000 (RTX 3080/3090, RTX 4070+, RX 6900/7900 XT)
-- [ ] **Hand-curate `cpus.json`** — ~40 CPUs released 2018 onward (Ryzen 2000+, Intel 8th gen+) with the same 4-tier shape using single-thread benchmark thresholds.
-- [ ] Document tier-threshold rationale in `DECISIONS.md`: *"Absolute thresholds (not percentiles) chosen because a percentile cut across all PassMark history would put a GTX 1060 in 'high tier' (half the dataset is 15-year-old hardware). Modern users see modern tiers."*
-- [ ] Schemas: `gpus` and `cpus` tables matching the JSON shape.
-- [ ] Laravel seeders ingest the JSON files. Run them as part of the deployment process.
-- [ ] Build `GET /api/hardware/gpus?search=...` and `GET /api/hardware/cpus?search=...` — typeahead endpoints for the hardware-selection UI.
-- [ ] React: hardware input form with autocomplete dropdowns. Order results by `g3d_mark` desc within filter matches.
+- [x] **Hand-curate `cpus.json`** — ~40 CPUs released 2018 onward (Ryzen 2000+, Intel 8th gen+) with the same 4-tier shape using single-thread benchmark thresholds.
+- [x] Document tier-threshold rationale in `DECISIONS.md`: *"Absolute thresholds (not percentiles) chosen because a percentile cut across all PassMark history would put a GTX 1060 in 'high tier' (half the dataset is 15-year-old hardware). Modern users see modern tiers."*
+- [x] Schemas: `gpus` and `cpus` tables matching the JSON shape.
+- [x] Laravel seeders ingest the JSON files. Run them as part of the deployment process.
+- [x] Build `GET /api/hardware/gpus?search=...` and `GET /api/hardware/cpus?search=...` — typeahead endpoints for the hardware-selection UI.
+- [x] React: hardware input form with autocomplete dropdowns. Order results by `g3d_mark` desc within filter matches.
 
 ### Browser-side hardware auto-detect (best-effort)
 
-- [ ] Use `navigator.hardwareConcurrency`, `navigator.deviceMemory`, and the WebGPU API (where supported) to pre-fill what the browser knows.
-- [ ] **Be honest about the limits.** The browser cannot identify the exact GPU model. Show a UI message: *"Auto-detected: 16 GB RAM, 12 cores. Please select your GPU manually — browsers don't expose the GPU model."* This is interview gold — it shows you understand the security model.
+- [x] Use `navigator.hardwareConcurrency`, `navigator.deviceMemory`, and the WebGPU API (where supported) to pre-fill what the browser knows.
+- [x] **Be honest about the limits.** The browser cannot identify the exact GPU model. Show a UI message: *"Auto-detected: 16 GB RAM, 12 cores. Please select your GPU manually — browsers don't expose the GPU model."* This is interview gold — it shows you understand the security model.
 
 ### PCGamingWiki integration (only if Phase 4.0 spike passed)
 

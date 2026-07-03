@@ -11,8 +11,10 @@ System design and infrastructure. Update when adding or removing services, chang
 - `users` own account/auth state, including Cashier columns installed in Phase 1 plus nullable Steam linkage fields: `steam_id` (unique SteamID64 string) and `steam_id_resolved_at`.
 - `games` is a user-scoped library table for both manual and Steam-imported entries. Steam sync keys rows by `(user_id, steam_app_id)` so repeat syncs update the same Steam-owned row without touching manual rows with null `steam_app_id`.
 - `play_sessions` stores manual tracking history for both manual and Steam games. Open rows have `ended_at = null`; end-session writes are transactional and only increment cached `games.playtime_minutes` for manual-sourced games.
+- `gpus` and `cpus` are small reference tables seeded from `database/data/*.json`. JSON stores raw benchmark values only; `GpuTierClassifier` and `CpuTierClassifier` materialize the tier column at seed time using absolute thresholds.
 - Game library list queries are indexed by `(user_id, status)` and `(user_id, last_played_at)`.
 - Session queries are indexed by `(user_id, ended_at)` for active lookup and `(user_id, started_at)` for history ordering.
+- Hardware typeahead queries are indexed by `(tier, g3d_mark)` for GPUs, `(tier, single_thread_mark)` for CPUs, plus unique indexed names.
 
 ## AWS infrastructure (Phase 6+)
 
@@ -58,6 +60,8 @@ Cookie-based Sanctum SPA auth. React (dev on Vite `:5173`, prod behind nginx) tr
 | POST | /api/sessions/{session}/end | auth:sanctum, throttle:30,1 | end own session, transactional duration/playtime update |
 | GET | /api/sessions/active | auth:sanctum | current open session with game summary |
 | GET | /api/sessions | auth:sanctum | paginated ended-session history |
+| GET | /api/hardware/gpus | auth:sanctum | top 20 GPU typeahead results ordered by G3D Mark |
+| GET | /api/hardware/cpus | auth:sanctum | top 20 CPU typeahead results ordered by single-thread PassMark |
 
 **Notification URL rewriting:**
 `VerifyEmail::createUrlUsing` and `ResetPassword::createUrlUsing` in `AppServiceProvider::boot()` rewrite the notification URLs to point at the frontend routes. The SPA verification page POSTs the preserved signed URL back to the backend to complete the flow.

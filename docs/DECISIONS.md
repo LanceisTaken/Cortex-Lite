@@ -224,3 +224,24 @@ Format per entry:
 **Rationale:** Two pre-defined checks gated this decision. (1) Rate limit: PCGamingWiki's API page publishes a firm limit of 30 requests/minute, enforced with HTTP 429 on excess, and requires a custom User-Agent with contact info - this is verified, not assumed. (2) Steam App ID -> wiki page hit rate: tested against 10 Steam App IDs spanning AAA, indie, and old titles via the Infobox_game Cargo table; 10/10 resolved (100%). The 70% threshold set in the build plan was met.
 **Alternatives considered:** Scraping wiki article markdown directly instead of the Cargo API - rejected, Cargo returns structured fields directly and is far cleaner. Guessing a conservative rate limit - unnecessary, a real published number exists.
 **Consequences:** PcGamingWikiClient will throttle to 30 req/min with a token-bucket limiter and cache responses in Redis (7-day TTL), per the existing Phase 4 plan.
+
+### CPU tier absolute thresholds (single-thread PassMark)
+**Date:** 2026-07-03
+**Decision:** Classify CPUs into 4 tiers (Low / Mid / High / Enthusiast) using absolute PassMark single-thread scores. Boundaries: Low `< 2800`, Mid `2800-3399`, High `3400-3999`, Enthusiast `>= 4000`.
+**Rationale:** Same reason absolute thresholds were chosen for GPUs - a percentile cut across the whole PassMark dataset would put a Ryzen 5 5600X (Zen 3, 2020) in "high tier" simply because half the dataset is 15-year-old CPUs. The chosen bands map cleanly to how gamers actually reason about their chips: pre-Zen 3 / pre-12th-gen (Low + Mid), Zen 3 + 11th-12th gen (High), Zen 4 + 13th gen and newer (Enthusiast). Single-thread is used (not multi-thread) because game engines still bottleneck on the primary game thread.
+**Alternatives considered:** Multi-thread PassMark (rejected - a 16-core Threadripper looks amazing on multi-thread but is often worse than an 8-core Zen 4 for gaming). Percentile (rejected - same skew problem as GPUs). Cinebench scores (rejected - same shape but harder to source for older parts).
+**Consequences:** `database/data/cpus.json` stores the raw single-thread score; `CpuTierClassifier` derives the tier at seed time. Threshold changes are a one-line edit in the classifier plus a `make artisan CMD="db:seed --class=CpuSeeder"` rerun.
+
+### Browser cannot identify the GPU model (best-effort auto-detect only)
+**Date:** 2026-07-03
+**Decision:** The `/hardware` page reads `navigator.hardwareConcurrency`, `navigator.deviceMemory`, and probes for WebGPU adapter presence, but does not attempt to identify the specific GPU model. The UI shows an explicit note that GPU selection is manual.
+**Rationale:** Modern browsers deliberately mask the GPU vendor/model behind a "vendor-masked" WebGPU adapter for fingerprinting-resistance reasons. `WEBGL_debug_renderer_info` was the workaround in the WebGL era but is either blocked or coarsened in current Chrome/Firefox/Safari. Silently guessing produces wrong answers; asking the user is honest and takes three keystrokes on a typeahead.
+**Alternatives considered:** Query `WEBGL_debug_renderer_info` (rejected - deprecated / gated behind privacy flags, wrong signal for a portfolio interview). Ship a browser extension that reads the OS-level device (rejected - massively out of scope for the web layer, and dedicated to the "why didn't you build the native agent" hand-wave). Use `navigator.userAgentData.getHighEntropyValues(['bitness'])` (rejected - still does not identify the GPU).
+**Consequences:** The interview answer to "how do you get the user's GPU?" is: "You can't from the browser. That's what the native agent is for - see `NATIVE_AGENT_CONTRACT.md`. The web layer takes a manual pick." Turning a limitation into a demonstrated system-boundary answer.
+
+### Tier column derived at seed time (not stored in JSON data files)
+**Date:** 2026-07-03
+**Decision:** `database/data/gpus.json` and `cpus.json` store only the raw benchmark number and identifying metadata. The `tier` column is derived by `GpuTierClassifier` / `CpuTierClassifier` at seed time.
+**Rationale:** Adding a new GPU is a one-line raw-data edit; the classifier assigns the tier deterministically. Adjusting a threshold is a single-constant edit in the classifier plus a seeder rerun - no JSON churn, no risk of drift between the stored tier and the boundary rules. Symmetrically shaped for CPUs.
+**Alternatives considered:** Store the tier in JSON (rejected - every threshold tweak becomes a mass JSON edit with drift risk). Compute tier on read via an accessor (rejected - the endpoint filters and orders by tier, so having it materialized is faster and simpler).
+**Consequences:** Any change to `GpuTierClassifier::THRESHOLDS` requires `make artisan CMD="db:seed --class=GpuSeeder"` to propagate. Documented in the seeder docblocks.
