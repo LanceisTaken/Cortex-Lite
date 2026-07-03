@@ -2,6 +2,16 @@
 
 Most recent first.
 
+## [2026-07-03] Cortex Lite - Phase 4 hardware tier database shipped
+
+Executed the Phase 4 hardware tier database plan and committed it as `3a8b034` (`[Sprint 4] ship hardware tier database slice`) on branch `Phase-4`, then pushed the branch to origin. The slice added symmetric `gpus` and `cpus` reference tables, Eloquent models/factories, absolute-threshold tier classifiers, idempotent JSON seeders, 61 GPU rows and 40 CPU rows under `database/data/`, and auth-gated typeahead endpoints (`GET /api/hardware/gpus`, `GET /api/hardware/cpus`) backed by wildcard-escaped `LIKE` search and benchmark-desc ordering. The React side added `client/src/lib/hardware.js`, browser hardware hint probing, a reusable `HardwareAutocomplete`, and a protected `/hardware` demo page linked from the Dashboard. Docs were updated in `ARCHITECTURE.md`, `DECISIONS.md`, `docs/cortex-lite-build-plan.md`, and `README.md`; the execution plan file was committed under `docs/superpowers/plans/2026-07-03-phase-4-hardware-tier-database.md`.
+
+Verified before commit with `make test` -> 176 passed, `npm run lint` -> passed with the pre-existing `AuthContext.jsx` fast-refresh warning, `npm run build` -> passed, `git diff --check` -> clean. Also ran `make migrate` and seeded `GpuSeeder`/`CpuSeeder` locally so the hardware autocomplete has reference data for manual frontend smoke testing. Later review fixes were applied but left uncommitted at this point: `HardwareAutocomplete` controlled-null sync + abort-ref cleanup, and `HardwareController` typeahead helper extraction.
+
+-> commit `3a8b034` on branch `Phase-4`
+
+---
+
 ## [2026-07-03] Cortex Lite - Phase 4.0 PCGamingWiki spike closed
 
 Ran the Phase 4.0 hit-rate test from inside the app container via `make shell`, using Laravel's HTTP client against PCGamingWiki's Cargo API with a custom CortexLite User-Agent and the required 2.1s delay between requests. All 10 Steam App IDs resolved through `Infobox_game.Steam_AppID` (10/10, 100%): Cyberpunk 2077, Elden Ring, GTA V, Half-Life 2, Garry's Mod, Deus Ex, Civilization V, Terraria, Stardew Valley, and Hades. Because the published rate-limit check was already complete (30 requests/minute, HTTP 429 on excess, custom User-Agent required) and the hit rate exceeded the 70% gate, the decision is to proceed with PCGamingWiki integration for the rest of Phase 4. Updated `docs/DECISIONS.md` and checked off the Phase 4.0 spike items in `docs/cortex-lite-build-plan.md`. No Phase 4 application code was written.
