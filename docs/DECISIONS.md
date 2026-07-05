@@ -273,3 +273,10 @@ Format per entry:
 **Rationale:** The steady-state throughput is 240 games/hour, comfortably below PCGamingWiki's 30 requests/minute ceiling and enough to drain a 100-game library in about 25 minutes without burst-draining the shared token bucket.
 **Alternatives considered:** Drain all pending games immediately after Steam sync (rejected because large libraries can monopolize the external API quota). Hourly batches (rejected because enrichment feedback would feel stale).
 **Consequences:** New Steam imports may show `metadata_status = pending` briefly in the library UI before the scheduled worker catches up.
+
+### Anchor presets calibrate the heuristic recommender
+**Date:** 2026-07-05
+**Decision:** Store the 30 curated setting presets as calibration anchors in `setting_presets`, not as a universal lookup table.
+**Rationale:** A complete per-game/per-tier/per-goal matrix would be brittle and expensive to curate. The recommender must generalize to games with no anchor coverage, so anchors are used as ground truth for semantic regression checks: the deterministic heuristic must not recommend unsupported ray tracing or upscaling when the curated source-backed anchor says otherwise. Each anchor keeps its source rationale in `notes`.
+**Alternatives considered:** Expand the dataset to every tier and goal for each anchor game (rejected because it turns Phase 4 into data entry and still does not cover arbitrary games). Treat anchors as exact output fixtures (rejected because each game uses different setting names, while the generalized heuristic returns a canonical schema).
+**Consequences:** Phase 5 can choose an exact anchor first when one exists, but the primary recommendation path remains deterministic and generalizable. Anchor tests catch capability contradictions without forcing byte-exact equality to game-specific option names.

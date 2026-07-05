@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             GpuSeeder::class,
             CpuSeeder::class,
+            SettingPresetSeeder::class,
         ]);
 
         User::factory()->create([

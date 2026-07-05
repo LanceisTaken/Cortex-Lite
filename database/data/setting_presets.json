@@ -1,0 +1,484 @@
+{
+  "_meta": {
+    "description": "Cortex Lite anchor settings dataset. 10 games x 3 (goal, gpu_tier) combinations = 30 records. Each record is calibration ground truth for the HeuristicRecommender, not a universal lookup table. gpu_tier values follow the project's absolute-threshold tiers (low < 8000 G3D Mark, mid 8000-13999, high 14000-21999). steam_app_id is null for games not distributed on Steam -- these must be added to a user's library as manual entries (source='manual'), not via Steam sync.",
+    "schema_version": "1.0",
+    "generated": "2026-07-05"
+  },
+  "presets": [
+    {
+      "game": "Cyberpunk 2077",
+      "steam_app_id": 1091500,
+      "goal": "performance",
+      "gpu_tier": "low",
+      "settings": {
+        "resolution_scale": "100%",
+        "upscaling": "DLSS/FSR Performance mode",
+        "ray_tracing": "off",
+        "shadow_quality": "medium",
+        "texture_quality": "medium",
+        "screen_space_reflections": "low",
+        "ambient_occlusion": "low",
+        "volumetric_fog_quality": "low",
+        "crowd_density": "low"
+      },
+      "notes": "Source: Digital Foundry PC settings breakdown (via TheGamer, PC Gamer). DF found SSR and ambient occlusion give minimal visual return for their cost and recommends leaving both low even on high-end rigs, so that guidance carries down into the low tier too."
+    },
+    {
+      "game": "Cyberpunk 2077",
+      "steam_app_id": 1091500,
+      "goal": "balanced",
+      "gpu_tier": "mid",
+      "settings": {
+        "resolution_scale": "100%",
+        "upscaling": "DLSS/FSR Balanced mode",
+        "ray_tracing": "off",
+        "shadow_quality": "high",
+        "texture_quality": "high",
+        "screen_space_reflections": "low",
+        "ambient_occlusion": "low",
+        "volumetric_fog_quality": "medium",
+        "crowd_density": "medium"
+      },
+      "notes": "Source: Digital Foundry PC settings breakdown; PC Gamer 2.0/Phantom Liberty settings guide. Shadow and volumetric settings pushed higher than perf tier since DF found shadow-family settings scale well with little frame cost; SSR/AO held low per the same DF finding used at every tier."
+    },
+    {
+      "game": "Cyberpunk 2077",
+      "steam_app_id": 1091500,
+      "goal": "quality",
+      "gpu_tier": "high",
+      "settings": {
+        "resolution_scale": "100%",
+        "upscaling": "DLSS Quality mode",
+        "ray_tracing": "on (medium/psycho reflections+shadows)",
+        "shadow_quality": "ultra",
+        "texture_quality": "ultra",
+        "screen_space_reflections": "low",
+        "ambient_occlusion": "low",
+        "volumetric_fog_quality": "high",
+        "crowd_density": "high"
+      },
+      "notes": "Source: PC Gamer 'best settings for Cyberpunk 2077 2.0 and Phantom Liberty'. DLSS recommended over FSR/XeSS as the sharpest, most stable upscaler on Nvidia hardware. RT reserved for high tier since PC Gamer frames full path tracing as too costly for anything below top-end hardware."
+    },
+    {
+      "game": "Counter-Strike 2",
+      "steam_app_id": 730,
+      "goal": "performance",
+      "gpu_tier": "low",
+      "settings": {
+        "resolution": "1280x960 (4:3 stretched)",
+        "global_shadow_quality": "very low",
+        "shader_detail": "very high",
+        "ambient_occlusion": "disabled",
+        "anti_aliasing": "off",
+        "boost_player_contrast": "enabled"
+      },
+      "notes": "Source: Switchblade Gaming CS2 low-end PC guide. Global Shadow Quality is called out as the single largest FPS lever in Source 2 (20-35 FPS swing on GTX 1060-class hardware); 4:3 stretched is the long-standing competitive convention for wider player models. Shader Detail is kept high regardless of tier since it only costs ~3 FPS but avoids on-the-fly shader compilation stutter."
+    },
+    {
+      "game": "Counter-Strike 2",
+      "steam_app_id": 730,
+      "goal": "balanced",
+      "gpu_tier": "mid",
+      "settings": {
+        "resolution": "1920x1080 native",
+        "global_shadow_quality": "medium",
+        "shader_detail": "very high",
+        "ambient_occlusion": "disabled",
+        "anti_aliasing": "2x MSAA",
+        "boost_player_contrast": "enabled"
+      },
+      "notes": "Source: recharge.com 'Best CS2 Settings 2026' competitive guide. Boost Player Contrast and Global Shadow Quality at Medium+ are called out as visibility-relevant, not just cosmetic, so they're kept on even in a performance-leaning config."
+    },
+    {
+      "game": "Counter-Strike 2",
+      "steam_app_id": 730,
+      "goal": "quality",
+      "gpu_tier": "high",
+      "settings": {
+        "resolution": "1920x1080 native",
+        "global_shadow_quality": "high",
+        "shader_detail": "very high",
+        "ambient_occlusion": "disabled",
+        "anti_aliasing": "4x MSAA",
+        "boost_player_contrast": "enabled"
+      },
+      "notes": "Source: recharge.com competitive settings guide; Eloking CS2 low/mid/high breakdown. Ambient Occlusion stays disabled even at the 'quality' anchor -- multiple sources agree it can obscure enemies in smoke-heavy fights, so it's one of the few settings this dataset deliberately does not raise with GPU tier."
+    },
+    {
+      "game": "Elden Ring",
+      "steam_app_id": 1245620,
+      "goal": "performance",
+      "gpu_tier": "low",
+      "settings": {
+        "preset": "Low-Medium",
+        "shadow_quality": "low",
+        "ssao": "medium",
+        "texture_quality": "medium",
+        "upscaling": "none (no native DLSS/FSR)",
+        "resolution_scale": "90%"
+      },
+      "notes": "Source: Digital Trends Elden Ring PC performance guide. Elden Ring has no native DLSS/FSR/XeSS; Digital Trends' own optimized settings (31% gain over Max preset) leave shadow and SSAO as the highest-value cuts, matching this record."
+    },
+    {
+      "game": "Elden Ring",
+      "steam_app_id": 1245620,
+      "goal": "balanced",
+      "gpu_tier": "mid",
+      "settings": {
+        "preset": "High",
+        "shadow_quality": "medium",
+        "ssao": "medium",
+        "texture_quality": "medium (VRAM-matched)",
+        "upscaling": "none (third-party Lossless Scaling only)",
+        "resolution_scale": "100%"
+      },
+      "notes": "Source: PCGamesN 'best Elden Ring settings for max fps'; Switchblade Gaming Elden Ring 2026 guide. PCGamesN recommends the High preset over Max for most players since Max's gains are marginal; texture quality is matched to VRAM tier rather than GPU tier since it's VRAM-bound, not FPS-bound, per Switchblade."
+    },
+    {
+      "game": "Elden Ring",
+      "steam_app_id": 1245620,
+      "goal": "quality",
+      "gpu_tier": "high",
+      "settings": {
+        "preset": "Max",
+        "shadow_quality": "high",
+        "ssao": "high",
+        "texture_quality": "high",
+        "ray_tracing": "on (RTX 4070+, shadows/AO only)",
+        "upscaling": "none (third-party Lossless Scaling only)",
+        "resolution_scale": "100%"
+      },
+      "notes": "Source: Switchblade Gaming Elden Ring 2026 guide. Ray tracing costs ~15-25% FPS on RTX 4070-class hardware, framed as worthwhile only if the 60fps cap still holds -- included here since 'high' tier is exactly the hardware class where that tradeoff clears."
+    },
+    {
+      "game": "Valorant",
+      "steam_app_id": null,
+      "goal": "performance",
+      "gpu_tier": "low",
+      "settings": {
+        "resolution": "1280x720",
+        "material_quality": "low",
+        "texture_quality": "low",
+        "detail_quality": "low",
+        "anti_aliasing": "off",
+        "upscaling": "not supported (no DLSS/FSR/XeSS in Valorant)"
+      },
+      "notes": "Source: Switchblade Gaming Valorant low-end PC guide. Not a Steam title (Riot launcher only) -- games.metadata_status for this record must come from a manual library entry, not Steam sync. Material Quality Low recovers ~80-110 FPS on GTX 1660-class hardware per Switchblade's PC settings guide."
+    },
+    {
+      "game": "Valorant",
+      "steam_app_id": null,
+      "goal": "balanced",
+      "gpu_tier": "mid",
+      "settings": {
+        "resolution": "1920x1080 native",
+        "material_quality": "low",
+        "texture_quality": "medium",
+        "detail_quality": "medium",
+        "anti_aliasing": "MSAA (light)",
+        "upscaling": "not supported"
+      },
+      "notes": "Source: PCGamesN 'best Valorant settings for optimized PC performance'. Material Quality stays Low even at mid/high tiers -- PCGamesN and Switchblade both frame it as a rendering-cost cut with no gameplay-relevant visual loss, not a quality tradeoff, so raising it with tier isn't justified."
+    },
+    {
+      "game": "Valorant",
+      "steam_app_id": null,
+      "goal": "quality",
+      "gpu_tier": "high",
+      "settings": {
+        "resolution": "1920x1080 native",
+        "material_quality": "low",
+        "texture_quality": "high",
+        "detail_quality": "high",
+        "anti_aliasing": "MSAA",
+        "upscaling": "not supported"
+      },
+      "notes": "Source: Switchblade Gaming 'Best Valorant PC settings 2026'. Even at the high-end anchor, competitive-shooter convention keeps Material Quality low; PCGamesN's own RTX 4070 test rig ran these settings at 305fps at 4K, underscoring how little headroom this game actually needs."
+    },
+    {
+      "game": "Baldur's Gate 3",
+      "steam_app_id": 1086940,
+      "goal": "performance",
+      "gpu_tier": "low",
+      "settings": {
+        "preset": "Low-Medium",
+        "shadow_quality": "low",
+        "ambient_occlusion": "off",
+        "subsurface_scattering": "off",
+        "dynamic_crowds": "off",
+        "upscaling": "DLSS/FSR Performance mode",
+        "api": "DirectX 11"
+      },
+      "notes": "Source: pcoptimizedsettings.com BG3 optimization guide; PCGamesN BG3 settings guide. Ambient Occlusion, Subsurface Scattering, and Dynamic Crowds are each called out as small FPS wins for real visual cost, and BG3 is noted as CPU-bottlenecked even at low settings, so Dynamic Crowds (NPC AI load) is disabled first."
+    },
+    {
+      "game": "Baldur's Gate 3",
+      "steam_app_id": 1086940,
+      "goal": "balanced",
+      "gpu_tier": "mid",
+      "settings": {
+        "preset": "Medium-High",
+        "shadow_quality": "medium",
+        "ambient_occlusion": "off",
+        "subsurface_scattering": "off",
+        "dynamic_crowds": "off (Act 3 only)",
+        "upscaling": "DLSS Quality mode",
+        "api": "DirectX 11"
+      },
+      "notes": "Source: PCGamesN BG3 settings guide; ROG Ally BG3 performance guide. Dynamic Crowds is specifically flagged as necessary to disable in Act 3 (Baldur's Gate city) regardless of tier, since NPC density there is what causes the CPU bottleneck, not the GPU-side settings."
+    },
+    {
+      "game": "Baldur's Gate 3",
+      "steam_app_id": 1086940,
+      "goal": "quality",
+      "gpu_tier": "high",
+      "settings": {
+        "preset": "Ultra",
+        "shadow_quality": "ultra",
+        "ambient_occlusion": "on",
+        "subsurface_scattering": "on",
+        "dynamic_crowds": "on",
+        "upscaling": "DLSS Quality mode or DLAA",
+        "api": "DirectX 11"
+      },
+      "notes": "Source: Digital Trends BG3 performance guide. Digital Trends measured Ultra vs Low at only a 10-12% FPS difference at 4K due to the CPU bottleneck -- called out explicitly since it means high-tier GPUs get comparatively little payoff from maxing every slider here versus other anchor games."
+    },
+    {
+      "game": "Fortnite",
+      "steam_app_id": null,
+      "goal": "performance",
+      "gpu_tier": "low",
+      "settings": {
+        "rendering_mode": "Performance Mode",
+        "resolution": "1280x720",
+        "shadows": "off",
+        "view_distance": "medium",
+        "ray_tracing": "off",
+        "upscaling": "DLSS Performance (RTX 2060+) or none"
+      },
+      "notes": "Source: Switchblade Gaming Fortnite low-end PC guide. Not a Steam title (Epic Games Store only) -- requires a manual library entry, same caveat as Valorant. Performance Mode swaps in pre-built low-poly assets and is described as roughly doubling FPS on GTX 1650-class hardware."
+    },
+    {
+      "game": "Fortnite",
+      "steam_app_id": null,
+      "goal": "balanced",
+      "gpu_tier": "mid",
+      "settings": {
+        "rendering_mode": "Performance Mode",
+        "resolution": "1920x1080",
+        "shadows": "off",
+        "view_distance": "epic",
+        "ray_tracing": "off",
+        "upscaling": "DLSS Quality mode (RTX 2060+)"
+      },
+      "notes": "Source: Switchblade Gaming Fortnite PC settings 2026 guide. View Distance is kept at Epic even in a performance-leaning config since visibility of distant players/builds is treated as a competitive necessity distinct from other quality settings, which stay low."
+    },
+    {
+      "game": "Fortnite",
+      "steam_app_id": null,
+      "goal": "quality",
+      "gpu_tier": "high",
+      "settings": {
+        "rendering_mode": "DX12, Epic quality preset",
+        "resolution": "1920x1080 or 1440p",
+        "shadows": "epic",
+        "view_distance": "epic",
+        "ray_tracing": "off",
+        "upscaling": "DLSS Quality mode"
+      },
+      "notes": "Source: Digital Trends Fortnite PC performance guide. Digital Trends explicitly recommends leaving ray tracing, reflections, and Nanite geometry off even on high-end hardware for competitive play, since they don't improve target-spotting and cost meaningful FPS -- so this anchor keeps RT off even at the quality tier, unlike the other anchor games."
+    },
+    {
+      "game": "Minecraft: Java Edition",
+      "steam_app_id": null,
+      "goal": "performance",
+      "gpu_tier": "low",
+      "settings": {
+        "graphics": "Fast",
+        "render_distance": "8 chunks",
+        "simulation_distance": "5 chunks",
+        "smooth_lighting": "off",
+        "entity_distance": "50%",
+        "shaders": "none"
+      },
+      "notes": "Source: Switchblade Gaming Minecraft Java FPS guide. Not distributed on Steam (Java Edition is sold via minecraft.net / Microsoft Store only) -- requires a manual library entry. Switchblade calls render distance the single biggest FPS lever, and separately notes Java is CPU-bound: an i5-13600K with a GTX 1060 outperforms an i3-12100 with an RTX 3070 in practice, so this game's tiering leans more on CPU tier than GPU tier despite gpu_tier being the anchor key."
+    },
+    {
+      "game": "Minecraft: Java Edition",
+      "steam_app_id": null,
+      "goal": "balanced",
+      "gpu_tier": "mid",
+      "settings": {
+        "graphics": "Fancy",
+        "render_distance": "12 chunks",
+        "simulation_distance": "8 chunks",
+        "smooth_lighting": "on (minimum)",
+        "entity_distance": "100%",
+        "shaders": "none"
+      },
+      "notes": "Source: Apex Hosting simulation distance guide; Switchblade Gaming Minecraft Java FPS guide. Simulation distance is kept lower than render distance deliberately -- Apex Hosting frames this as the standard balance since it controls background tick load (mob AI, farms) separately from what's simply visible."
+    },
+    {
+      "game": "Minecraft: Java Edition",
+      "steam_app_id": null,
+      "goal": "quality",
+      "gpu_tier": "high",
+      "settings": {
+        "graphics": "Fancy",
+        "render_distance": "24 chunks",
+        "simulation_distance": "10-12 chunks",
+        "smooth_lighting": "on (maximum)",
+        "entity_distance": "100%",
+        "shaders": "optional (Iris + shader pack, GPU-dependent)"
+      },
+      "notes": "Source: Switchblade Gaming Minecraft Java FPS guide. Shaders are flagged optional rather than default even at the quality anchor, since Java's single-thread-bound render pipeline means a high GPU tier doesn't guarantee shader headroom -- CPU tier matters more, echoing the performance-tier note above."
+    },
+    {
+      "game": "Grand Theft Auto V",
+      "steam_app_id": 271590,
+      "goal": "performance",
+      "gpu_tier": "low",
+      "settings": {
+        "upscaling": "FSR 3 / DLSS Performance mode",
+        "grass_quality": "normal",
+        "shadow_quality": "high",
+        "reflection_quality": "normal",
+        "population_density": "reduced",
+        "anti_aliasing": "FXAA",
+        "ray_tracing": "off"
+      },
+      "notes": "Source: AVG GTA V performance guide; Switchblade Gaming GTA V Enhanced 2026 guide. Reflects GTA V Enhanced (the March 2025 rebuild that replaced the original PC release on Steam/Epic) rather than the discontinued Legacy version. Grass Quality and MSAA are called out as the two highest-value FPS cuts."
+    },
+    {
+      "game": "Grand Theft Auto V",
+      "steam_app_id": 271590,
+      "goal": "balanced",
+      "gpu_tier": "mid",
+      "settings": {
+        "upscaling": "DLSS/FSR 3 Balanced mode",
+        "grass_quality": "high",
+        "shadow_quality": "very high",
+        "reflection_quality": "high",
+        "population_density": "10/10",
+        "anti_aliasing": "TAA",
+        "ray_tracing": "off"
+      },
+      "notes": "Source: Steam Community 'GTA V Enhanced: Ultimate Graphics & Optimization Guide'. Texture Quality is treated as effectively free at this tier (set as high as VRAM allows) since it's VRAM-bound rather than FPS-bound, consistent with the pattern seen in RDR2 and Elden Ring."
+    },
+    {
+      "game": "Grand Theft Auto V",
+      "steam_app_id": 271590,
+      "goal": "quality",
+      "gpu_tier": "high",
+      "settings": {
+        "upscaling": "DLSS Quality mode (DLSS 4 Frame Gen on RTX 40/50)",
+        "grass_quality": "ultra",
+        "shadow_quality": "very high",
+        "reflection_quality": "ultra",
+        "population_density": "10/10",
+        "anti_aliasing": "TAA",
+        "ray_tracing": "on"
+      },
+      "notes": "Source: Switchblade Gaming 'Best GTA V PC Settings 2026'. Upscaling is described as the single highest-impact setting in GTA V Enhanced even at the quality tier -- DLSS Quality mode is framed as visually indistinguishable from native at normal viewing distances while recovering GPU headroom for ray tracing."
+    },
+    {
+      "game": "Red Dead Redemption 2",
+      "steam_app_id": 1174180,
+      "goal": "performance",
+      "gpu_tier": "low",
+      "settings": {
+        "texture_quality": "high (VRAM-matched)",
+        "lighting_quality": "medium",
+        "global_illumination_quality": "medium",
+        "reflection_quality": "low",
+        "volumetrics_quality": "low",
+        "shadow_quality": "medium",
+        "far_shadows": "low",
+        "upscaling": "DLSS/FSR Performance mode"
+      },
+      "notes": "Source: Steam Community 'RDR2 Optimized Settings' (Xbox One X-equivalent breakdown, cross-checked against Digital Foundry's settings analysis). Reflection Quality dropping to Low nets an 8-9% FPS gain per pcoptimizedsettings.com's benchmarks, for minimal visible loss -- one of the clearest cost/benefit cuts in the whole dataset."
+    },
+    {
+      "game": "Red Dead Redemption 2",
+      "steam_app_id": 1174180,
+      "goal": "balanced",
+      "gpu_tier": "mid",
+      "settings": {
+        "texture_quality": "ultra (VRAM-matched)",
+        "lighting_quality": "medium",
+        "global_illumination_quality": "medium",
+        "reflection_quality": "low",
+        "volumetrics_quality": "medium",
+        "shadow_quality": "high",
+        "far_shadows": "medium",
+        "upscaling": "DLSS/FSR Balanced-Quality mode"
+      },
+      "notes": "Source: pcoptimizedsettings.com 'RDR2 Optimization: Best RDR2 Settings'. Reflection Quality is kept at Low even at the mid/balanced anchor, deliberately breaking the usual 'raise everything with tier' pattern, because pcoptimizedsettings.com found the visual cost of higher reflection settings isn't justified at any but the highest tier."
+    },
+    {
+      "game": "Red Dead Redemption 2",
+      "steam_app_id": 1174180,
+      "goal": "quality",
+      "gpu_tier": "high",
+      "settings": {
+        "texture_quality": "ultra",
+        "lighting_quality": "high",
+        "global_illumination_quality": "high",
+        "reflection_quality": "medium",
+        "volumetrics_quality": "high",
+        "shadow_quality": "ultra",
+        "far_shadows": "high",
+        "upscaling": "DLSS/FSR Quality mode"
+      },
+      "notes": "Source: pcoptimizedsettings.com RDR2 optimization guide; NeoGAF thread compiling Digital Foundry's full RDR2 settings breakdown. Reflection Quality is raised only to Medium even here, not Ultra/ ultra -- consistent with DF's finding that it's among the most expensive settings in the game for the least visual return."
+    },
+    {
+      "game": "Helldivers 2",
+      "steam_app_id": 553850,
+      "goal": "performance",
+      "gpu_tier": "low",
+      "settings": {
+        "render_scale": "Performance",
+        "shadow_quality": "low",
+        "reflection_quality": "lowest (disabled)",
+        "particle_quality": "lowest",
+        "volumetric_fog_quality": "lowest",
+        "ambient_occlusion": "off",
+        "async_compute": "off"
+      },
+      "notes": "Source: pcoptimizedsettings.com Helldivers 2 optimized settings; Hone.gg Helldivers 2 FPS guide. Helldivers 2 shipped without DLSS/FSR (a basic spatial upscaler is used instead), and is described as fundamentally CPU-bound -- Async Compute is disabled since multiple sources found it costs up to 20% FPS with no visual benefit, on any tier."
+    },
+    {
+      "game": "Helldivers 2",
+      "steam_app_id": 553850,
+      "goal": "balanced",
+      "gpu_tier": "mid",
+      "settings": {
+        "render_scale": "Ultra Quality",
+        "shadow_quality": "medium",
+        "reflection_quality": "low (cubemap)",
+        "particle_quality": "low",
+        "volumetric_fog_quality": "low",
+        "ambient_occlusion": "on",
+        "async_compute": "off"
+      },
+      "notes": "Source: Steam Community 'Helldivers 2 Optimized Graphics Presets'; pcoptimizedsettings.com. Render Scale 'Ultra Quality' (not Native) is the specific recommendation multiple sources converge on for mid-tier hardware -- described as a ~40% FPS gain for minimal visible loss, which is why it's used here instead of Native."
+    },
+    {
+      "game": "Helldivers 2",
+      "steam_app_id": 553850,
+      "goal": "quality",
+      "gpu_tier": "high",
+      "settings": {
+        "render_scale": "Native",
+        "shadow_quality": "high",
+        "reflection_quality": "low (cubemap)",
+        "particle_quality": "high",
+        "volumetric_fog_quality": "high",
+        "ambient_occlusion": "on",
+        "async_compute": "off"
+      },
+      "notes": "Source: pcoptimizedsettings.com Helldivers 2 optimized settings. Reflection Quality is kept at Low even at the quality anchor -- pcoptimizedsettings.com's own benchmarks show High reflections cost ~9% FPS versus Lowest for a visual difference the guide itself calls minimal, so this is one of the few settings this dataset does not raise at the top tier."
+    }
+  ]
+}

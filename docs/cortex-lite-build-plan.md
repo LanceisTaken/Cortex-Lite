@@ -214,24 +214,24 @@
 
 ### PCGamingWiki integration (only if Phase 4.0 spike passed)
 
-- [ ] Build a `PcGamingWikiClient` service class wrapping the MediaWiki **Cargo API** (`?action=cargoquery&format=json&tables=Infobox_game,API,Video&fields=...&where=Infobox_game.Steam_AppID=...`). Cargo returns the structured graphics-options table directly — far cleaner than scraping article markup.
-- [ ] **Respect the verified rate limit strictly** with a token-bucket throttle in `app/Services/RateLimiter/PcGamingWikiLimiter.php`. Custom user-agent string including contact email per their etiquette.
-- [ ] Cache responses aggressively in Redis (7-day TTL).
+- [x] Build a `PcGamingWikiClient` service class wrapping the MediaWiki **Cargo API** (`?action=cargoquery&format=json&tables=Infobox_game,API,Video&fields=...&where=Infobox_game.Steam_AppID=...`). Cargo returns the structured graphics-options table directly — far cleaner than scraping article markup.
+- [x] **Respect the verified rate limit strictly** with a token-bucket throttle in `app/Services/RateLimiter/PcGamingWikiLimiter.php`. Custom user-agent string including contact email per their etiquette.
+- [x] Cache responses aggressively in Redis (7-day TTL).
 - [x] Schema: `game_metadata` table — `id`, `game_id` (FK), `direct3d_versions`, `vulkan_supported`, `hdr_supported`, `ultrawide_supported`, `dlss_supported`, `fsr_supported`, `ray_tracing_supported`, `raw_response` (JSON for future fields), timestamps.
 - [x] Scheduled job: for each game with `metadata_status = 'pending'`, look up via PCGamingWiki, persist the result, flip `metadata_status` to `ok` or `missing`. The React library UI shows a small status icon per game so the user understands metadata enrichment is in progress.
-- [ ] PHPUnit tests with HTTP fakes: cache hit path, rate-limit-respect path, no-match → `missing` status.
+- [x] PHPUnit tests with HTTP fakes: cache hit path, rate-limit-respect path, no-match → `missing` status.
 
 ### Anchor settings dataset
 
-- [ ] Pick the **10 anchor games** spanning genres and engines: Cyberpunk 2077, CS2, Elden Ring, Valorant, Baldur's Gate 3, Fortnite, Minecraft Java, GTA V, Red Dead Redemption 2, Helldivers 2.
-- [ ] Hand-curate the anchor settings JSON: 10 games × 3 goals × **1 representative tier per goal** (low/perf, mid/balanced, high/quality) = ~30 anchor records. Each record cites its source (Tom's Hardware, Digital Foundry, PCGamingWiki) in the `notes` field — the discipline that turns "I made up numbers" into "I curated against published guides."
-- [ ] Commit `setting_presets.json` to the repo. Document the methodology in `DECISIONS.md` (specifically: anchors are calibration for the heuristic engine, not a lookup table).
-- [ ] Laravel seeder ingests `setting_presets.json` into a `setting_presets` table.
+- [x] Pick the **10 anchor games** spanning genres and engines: Cyberpunk 2077, CS2, Elden Ring, Valorant, Baldur's Gate 3, Fortnite, Minecraft Java, GTA V, Red Dead Redemption 2, Helldivers 2.
+- [x] Hand-curate the anchor settings JSON: 10 games × 3 goals × **1 representative tier per goal** (low/perf, mid/balanced, high/quality) = ~30 anchor records. Each record cites its source (Tom's Hardware, Digital Foundry, PCGamingWiki) in the `notes` field — the discipline that turns "I made up numbers" into "I curated against published guides."
+- [x] Commit `setting_presets.json` to the repo. Document the methodology in `DECISIONS.md` (specifically: anchors are calibration for the heuristic engine, not a lookup table).
+- [x] Laravel seeder ingests `setting_presets.json` into a `setting_presets` table.
 
 ### Heuristic recommender (primary path)
 
-- [ ] Build `HeuristicRecommender` — for any (game, gpu_tier, cpu_tier, ram_bucket, goal) tuple, construct a settings JSON using GPU tier × goal as the primary axis, masked by PCGamingWiki metadata (e.g., don't recommend DLSS for a game that doesn't support it; don't recommend ray tracing if `ray_tracing_supported = false`).
-- [ ] **Anchor calibration check (compile-time):** for every (anchor_game, anchor_tier, anchor_goal) tuple, the heuristic recommender's output is compared to the anchor record in a PHPUnit test. Drift triggers a test failure. This is the interview answer to "how do you know the heuristic is right?" — *"I have anchor regression tests against curated ground truth for the most common cases."*
+- [x] Build `HeuristicRecommender` — for any (game, gpu_tier, cpu_tier, ram_bucket, goal) tuple, construct a settings JSON using GPU tier × goal as the primary axis, masked by PCGamingWiki metadata (e.g., don't recommend DLSS for a game that doesn't support it; don't recommend ray tracing if `ray_tracing_supported = false`).
+- [x] **Anchor calibration check (compile-time):** for every (anchor_game, anchor_tier, anchor_goal) tuple, the heuristic recommender's output is checked against the anchor record for semantic capability contradictions. Drift triggers a test failure. This is the interview answer to "how do you know the heuristic is right?" — *"I have anchor regression tests against curated ground truth for the most common cases."*
 
 **Resume bullet (earn before claiming):** *"Built a multi-source data pipeline for hardware classification and game-settings recommendations: hand-curated a tier database of ~60 modern GPUs and ~40 CPUs with absolute benchmark thresholds, integrated rate-limit-compliant PCGamingWiki Cargo queries with Redis caching for game metadata, hand-curated a 30-record anchor dataset for calibration, and implemented a heuristic recommender masked by per-game capabilities with anchor regression tests."*
 

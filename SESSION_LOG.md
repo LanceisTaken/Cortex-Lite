@@ -2,6 +2,18 @@
 
 Most recent first.
 
+## [2026-07-05] Cortex Lite - Phase 4 anchor presets and heuristic recommender shipped
+
+Executed the Phase 4 anchor dataset persistence and heuristic recommender plan on branch `Phase-4`. The supplied `docs/setting_presets.json` was moved byte-identically into `database/data/setting_presets.json`, then wired into a new `setting_presets` table with `SettingPreset` model/factory, idempotent `SettingPresetSeeder`, natural uniqueness on `(game, goal, gpu_tier)`, and `DatabaseSeeder` registration. The 30 anchors remain flexible per-game JSON blobs and are documented as calibration ground truth, not a universal lookup table.
+
+Added `App\Services\HeuristicRecommender`, a fully deterministic settings generator driven by GPU tier and goal, with capability masking for DLSS/FSR upscaling and ray tracing. It accepts `low`, `mid`, `high`, and `enthusiast` GPU tiers, defaults missing capability flags to unsupported, and throws on unknown tier/goal strings. No frontend or HTTP endpoint was added in this slice; Phase 5's recommendation orchestration will consume the table/service server-side.
+
+Docs updated in `ARCHITECTURE.md`, `DECISIONS.md`, `docs/cortex-lite-build-plan.md`, and the execution plan. Verified with `make test` -> 218 passed, `make migrate`, `make artisan CMD="db:seed --class=SettingPresetSeeder"`, and `git diff --check` -> clean. `docs/code-standards.md` remains modified from pre-existing user work and was intentionally left out of the commit.
+
+-> commit `[Sprint 4] add anchor presets and heuristic recommender`
+
+---
+
 ## [2026-07-03] Cortex Lite - Phase 4 PCGamingWiki metadata enrichment shipped
 
 Implemented and committed the Phase 4 PCGamingWiki metadata integration slice on branch `Phase-4`. The work added a `game_metadata` table/model/factory, PCGamingWiki API client, deterministic AppID-only Redis cache key, Redis-backed token-bucket limiter, fail-fast contact email config, enrichment command (`games:enrich-metadata --limit=20`), scheduler registration every five minutes, and frontend Library metadata status visibility. Steam-sourced games remain fast to sync and are marked `metadata_status='pending'`; the separate enrichment command resolves Steam AppIDs through PCGamingWiki Cargo and flips rows to `ok` or `missing`.
