@@ -2,6 +2,20 @@
 
 Most recent first.
 
+## [2026-07-06] Cortex Lite - Stripe checkout bug fixed, MYR pricing made consistent, live-mode-vs-test-mode clarified
+
+User reported the "Upgrade to Premium" button always failed with a generic "Could not start checkout." Root-caused (systematic-debugging skill) to a naming mismatch: `.env` stored the Stripe price ID under `CORTEX_PREMIUM_PRICE_ID`, but `config/services.php` reads `env('STRIPE_PRICE_PREMIUM')`, so `CheckoutController` always hit its `stripe_not_configured` 500 guard. Renamed the key in `.env` (untracked, not committed) to `STRIPE_PRICE_PREMIUM`.
+
+Verified the full flow live against Stripe test mode rather than just trusting the config read: confirmed the price resolves to an active MYR 20.00/month recurring Price, created a real Checkout session through the exact `CheckoutController` code path for a real user, and ran `stripe listen --forward-to localhost:8080/api/stripe/webhook` + `stripe trigger customer.subscription.created` to confirm the webhook route returns 200 with signature verification intact. All 21 billing/quota tests pass; frontend lint unchanged (pre-existing AuthContext warning only).
+
+Discovered the app's price is MYR, not USD as originally planned/hardcoded — updated `Dashboard.jsx` and `Optimizer.jsx` upgrade buttons to "RM20/mo", `.env.example` to `CASHIER_CURRENCY=myr`, and README/build-plan copy to match (dated files under `docs/superpowers/` left as historical record). Added a `docs/TROUBLESHOOTING.md` entry for the checkout failure mode and a `docs/DECISIONS.md` ADR for the MYR pricing choice.
+
+Discussed with the user (no code change) that `stripe listen` is a local-only tunnel for the *inbound* webhook leg (Stripe can't reach localhost) and is not needed post-deploy — production instead needs a Dashboard-registered webhook endpoint with its own signing secret plus the already-documented CloudFront header carve-out. Also clarified that deploying live while keeping Stripe in test mode is fine and is the recommended path for this portfolio demo: real public URL, test-mode keys, orange "TEST MODE" checkout badge, only test cards (e.g. `4242 4242 4242 4242`) accepted, real webhooks still fire autonomously. Suggested (not yet done) adding the test-card number to the README evaluator quick-start section.
+
+-> pending commit `[Sprint 5] fix Stripe checkout price env mismatch, switch pricing to MYR` on branch `Phase-6`
+
+---
+
 ## [2026-07-06] Cortex Lite - Gemini live-call verification and 429 quota documented
 
 Verified the Gemini integration end-to-end at the user's request, after wiring the optimizer frontend. Confirmed `GEMINI_API_KEY` is configured and reaches `generativelanguage.googleapis.com`, but the project's free-tier `gemini-3.5-flash` quota (20 `generateContent` requests/day) was exhausted, so `GeminiClient::generate()` throws `GeminiApiException: Gemini returned HTTP 429` and `ExplanationGenerator` fails open to the deterministic static explanation string, as designed. Confirmed via direct `make artisan CMD="tinker --execute=..."` calls to `GeminiClient` and to the raw Gemini HTTP endpoint (reading `RESOURCE_EXHAUSTED` / `GenerateRequestsPerDayPerProjectPerModel-FreeTier` in the response body).

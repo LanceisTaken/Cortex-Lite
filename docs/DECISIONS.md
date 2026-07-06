@@ -343,3 +343,10 @@ Format per entry:
 **Rationale:** Phase 5 needs a smooth demo flow (pick hardware once, optimize many games) without expanding backend scope. The recommend/reverse endpoints already take hardware per-request, so no server state is required for correctness.
 **Alternatives considered:** Users-table columns + profile endpoint (rejected for Phase 5: schema churn and IDOR/test surface for a value the client already holds); no persistence (rejected: tedious in the evaluator demo).
 **Consequences:** Profile does not roam across browsers/devices. A server-side profile can supersede this later without breaking the API contract.
+
+### MYR pricing (RM20/month) over USD for Cortex Premium
+**Date:** 2026-07-06
+**Decision:** The Cortex Premium subscription is priced in Malaysian Ringgit — a single recurring Stripe Price of RM20.00/month — with `CASHIER_CURRENCY=myr` and UI labels reading "RM20/mo".
+**Rationale:** The Stripe account and target demo audience are Malaysian; pricing in the account's native currency avoids FX presentment surprises and makes the Stripe test dashboard, checkout page, and app UI all show the same number. The Stripe Price object is the single source of truth for the charge; config and UI copy follow it.
+**Alternatives considered:** USD $5/month as originally planned (rejected: mismatched the Stripe account currency and would present a converted amount at checkout); multi-currency prices (rejected: needless complexity for a single-market portfolio demo).
+**Consequences:** README, build plan, and the two hardcoded upgrade-button labels must stay in sync with the Stripe Price if it ever changes. Historical plan documents under `docs/superpowers/` still say $5/mo as a record of what was planned at the time.

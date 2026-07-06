@@ -199,7 +199,7 @@ export default function Dashboard() {
               </p>
             ) : null}
             <Button type="button" onClick={handleUpgrade} disabled={upgrading}>
-              {upgrading ? 'Starting checkout...' : 'Upgrade to Premium - $5/mo'}
+              {upgrading ? 'Starting checkout...' : 'Upgrade to Premium - RM20/mo'}
             </Button>
           </div>
         ) : (

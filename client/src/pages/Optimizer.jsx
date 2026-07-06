@@ -203,7 +203,7 @@ export default function Optimizer() {
         <div className="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm text-amber-900">{quota.message}</p>
           <Button type="button" onClick={handleUpgrade} disabled={upgrading}>
-            {upgrading ? 'Starting checkout...' : 'Upgrade to Premium - $5/mo'}
+            {upgrading ? 'Starting checkout...' : 'Upgrade to Premium - RM20/mo'}
           </Button>
         </div>
       ) : null}

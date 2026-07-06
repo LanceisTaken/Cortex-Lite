@@ -54,7 +54,7 @@
 5. **Steam playtime backfill.** A scheduled job re-syncs Steam-connected libraries periodically, picking up newly purchased games and aggregate playtime changes.
 6. **AI-assisted settings optimizer (forward mode).** User selects hardware and a goal (performance / balanced / quality) and a game. Backend produces a recommended settings configuration with a natural-language explanation.
 7. **Reverse mode.** User pastes a current settings JSON; rule-based engine diffs it against the canonical preset; LLM explains the diff. Available to free users (rate-limited).
-8. **Premium subscription (Stripe).** Free tier: 3 recommendations + 5 reverse-mode calls per rolling 30 days, all games supported. Premium tier ($5/month): both caps removed.
+8. **Premium subscription (Stripe).** Free tier: 3 recommendations + 5 reverse-mode calls per rolling 30 days, all games supported. Premium tier (RM20/month): both caps removed.
 9. **Account deletion.** `DELETE /api/account` cascades user data deletion (games, sessions, recommendations) and cancels any active Stripe subscription. GDPR-shaped signal.
 
 ### Backend / infrastructure features (not user-visible but built)
@@ -279,7 +279,7 @@
 - [x] Add `is_premium`; use Cashier's existing `stripe_id` customer column instead of adding duplicate `stripe_customer_id`. **Do not add a counter column** - use the rolling-window count below.
 - [x] Add one `usage_events` table with a `type` column - every successful optimizer call logs a row. Free-tier quota check: `count where user_id = ? and type = 'recommend' and created_at >= now() - interval 30 day`. Rolling window, no reset job.
 - [x] Install Laravel Cashier.
-- [x] `POST /api/checkout` creates a Stripe Checkout Session for a $5/month "Cortex Premium" subscription.
+- [x] `POST /api/checkout` creates a Stripe Checkout Session for a RM20/month "Cortex Premium" subscription.
 - [x] Stripe webhook handler at `/api/stripe/webhook` flipping `is_premium` on subscription create/cancel events. **Verify webhook signatures** - most-asked Stripe interview topic.
 - [x] **CSRF-exempt the webhook route** (`VerifyCsrfToken` middleware excluded for `stripe/webhook`).
 - [x] **Free tier (all games supported):**
