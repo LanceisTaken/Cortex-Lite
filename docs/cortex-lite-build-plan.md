@@ -256,13 +256,13 @@
 
 ### Reverse mode (settings diff)
 
-- [ ] `SettingsDiffEngine` service. Inputs: pasted settings JSON, plus the same hardware/goal inputs as forward mode. Algorithm:
+- [x] `SettingsDiffEngine` service. Inputs: pasted settings JSON, plus the same hardware/goal inputs as forward mode. Algorithm:
   1. Run `RecommendationEngine` to get the canonical preset for `(game, hardware, goal)`.
   2. Diff the pasted JSON against the canonical preset. Output: `{texture_quality: "high → medium", ray_tracing: "on → off", ...}`.
   3. Return the structured diff to the caller.
-- [ ] Endpoint: `POST /api/reverse` taking pasted JSON + hardware/goal, returning the diff + an LLM-generated explanation prose.
-- [ ] **Architectural note documented in `DECISIONS.md`**: *"Reverse mode is rule-based, not LLM-driven. The LLM explains the structured diff in prose but never judges settings directly. This preserves the 'LLM cannot affect the recommendation' safety story across both modes."*
-- [ ] PHPUnit tests for the diff engine: known pasted JSON + canonical preset → expected diff.
+- [x] Endpoint: `POST /api/reverse` taking pasted JSON + hardware/goal, returning the diff + a deterministic static explanation fallback. LLM prose lands in the separate explanation section below.
+- [x] **Architectural note documented in `DECISIONS.md`**: *"Reverse mode is rule-based, not LLM-driven. The LLM explains the structured diff in prose but never judges settings directly. This preserves the 'LLM cannot affect the recommendation' safety story across both modes."*
+- [x] PHPUnit tests for the diff engine: known pasted JSON + canonical preset → expected diff.
 
 ### LLM-generated explanation
 
