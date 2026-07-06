@@ -245,14 +245,14 @@
 
 ### Forward-mode recommendation engine
 
-- [ ] `RecommendationEngine` service. Inputs: `game_id`, `gpu_id`, `cpu_id`, `ram_gb`, `goal`. Algorithm:
+- [x] `RecommendationEngine` service. Inputs: `game_id`, `gpu_id`, `cpu_id`, `ram_gb`, `goal`. Algorithm:
   1. Look up GPU tier, CPU tier, bucket RAM (`< 16GB`, `16-31GB`, `≥ 32GB`).
   2. If `setting_presets` has an anchor for `(game_id, gpu_tier, goal)`, use it directly.
   3. Else invoke `HeuristicRecommender` with PCGamingWiki metadata (or anchor-game metadata if PCGamingWiki was skipped).
   4. Apply CPU/RAM bottleneck adjustments (e.g., if RAM < 16GB, force lower texture pool).
   5. Return the structured settings JSON.
-- [ ] Endpoint: `POST /api/recommend` taking the inputs, returning the settings JSON plus an `explanation` field.
-- [ ] PHPUnit tests for the engine: known inputs → expected outputs. The recommendation engine is deterministic.
+- [x] Endpoint: `POST /api/recommend` taking the inputs, returning the settings JSON plus an `explanation` field.
+- [x] PHPUnit tests for the engine: known inputs → expected outputs. The recommendation engine is deterministic.
 
 ### Reverse mode (settings diff)
 
