@@ -1,1 +1,23 @@
 @import "tailwindcss";
+
+/* One orchestrated moment: optimizer result panels rise in on arrival. */
+@keyframes panel-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.panel-reveal {
+  animation: panel-reveal 0.3s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-reveal {
+    animation: none;
+  }
+}
