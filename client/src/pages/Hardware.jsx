@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { HardwareAutocomplete } from '../components/hardware/HardwareAutocomplete'
 import { probeWebGpu, readBrowserHints } from '../lib/browserHardware'
+import { loadHardwareProfile, saveHardwareProfile } from '../lib/hardwareProfile'
 
 function TierBadge({ tier }) {
   if (!tier) return null
@@ -21,8 +22,8 @@ function TierBadge({ tier }) {
 }
 
 export default function Hardware() {
-  const [gpu, setGpu] = useState(null)
-  const [cpu, setCpu] = useState(null)
+  const [gpu, setGpu] = useState(() => loadHardwareProfile().gpu)
+  const [cpu, setCpu] = useState(() => loadHardwareProfile().cpu)
   const [hints, setHints] = useState({ cpuCores: null, deviceMemoryGb: null })
   const [webgpu, setWebgpu] = useState({ supported: false, adapterInfo: null })
 
@@ -30,6 +31,11 @@ export default function Hardware() {
     setHints(readBrowserHints())
     probeWebGpu().then(setWebgpu)
   }, [])
+
+  useEffect(() => {
+    // This page has no RAM input — pass the stored value through unchanged.
+    saveHardwareProfile({ gpu, cpu, ramGb: loadHardwareProfile().ramGb })
+  }, [gpu, cpu])
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8">
@@ -84,7 +90,7 @@ export default function Hardware() {
           </div>
         </div>
         <p className="mt-4 text-xs text-slate-400">
-          Selection is not saved server-side in this phase. It will feed the recommender in Phase 5.
+          Saved in this browser and shared with the <Link className="underline" to="/optimizer">Settings Optimizer</Link>.
         </p>
       </section>
     </div>
