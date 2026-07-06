@@ -2,6 +2,16 @@
 
 Most recent first.
 
+## [2026-07-06] Cortex Lite - Phase 5 forward-mode recommendation backend shipped
+
+Executed the Phase 5 forward-mode recommendation engine plan on branch `Phase-5`. Added `RamBucketClassifier`, deterministic `RecommendationEngine`, and the Sanctum-protected `POST /api/recommend` endpoint with validation, IDOR-safe user-game scoping, anchor-first resolution via `setting_presets`, metadata-masked heuristic fallback, under-16GB RAM texture clamping, CPU bottleneck surfacing, and a deterministic static explanation string for the later LLM fallback path.
+
+Docs updated in `DECISIONS.md` and `docs/cortex-lite-build-plan.md`; the execution plan is saved at `docs/superpowers/plans/2026-07-06-phase-5-forward-mode-recommendation-engine.md`. Verified with focused PHPUnit filters for `RamBucketClassifierTest`, `RecommendationEngineTest`, and `RecommendEndpointTest`, then `make test` -> 234 passed / 857 assertions and `git diff --check` -> clean. No frontend files changed and no frontend testing was needed for this backend-only slice.
+
+-> commits `1ab927c`, `34d8a51`, `54088bf`, `ad4e63b` on branch `Phase-5`
+
+---
+
 ## [2026-07-05] Cortex Lite - Phase 4 anchor presets and heuristic recommender shipped
 
 Executed the Phase 4 anchor dataset persistence and heuristic recommender plan on branch `Phase-4`. The supplied `docs/setting_presets.json` was moved byte-identically into `database/data/setting_presets.json`, then wired into a new `setting_presets` table with `SettingPreset` model/factory, idempotent `SettingPresetSeeder`, natural uniqueness on `(game, goal, gpu_tier)`, and `DatabaseSeeder` registration. The 30 anchors remain flexible per-game JSON blobs and are documented as calibration ground truth, not a universal lookup table.
