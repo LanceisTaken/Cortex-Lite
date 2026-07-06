@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\HardwareController;
 use App\Http\Controllers\PlaySessionController;
+use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\SteamAuthController;
 use App\Http\Controllers\SteamSyncController;
 use App\Http\Controllers\UserController;
@@ -59,6 +60,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->name('hardware.gpus.search');
     Route::get('/hardware/cpus', [HardwareController::class, 'cpus'])
         ->name('hardware.cpus.search');
+
+    Route::post('/recommend', [RecommendationController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('recommend');
 
     Route::post('/sessions/start', [PlaySessionController::class, 'start'])
         ->middleware('throttle:30,1')
