@@ -2,6 +2,16 @@
 
 Most recent first.
 
+## [2026-07-06] Cortex Lite - Gemini live-call verification and 429 quota documented
+
+Verified the Gemini integration end-to-end at the user's request, after wiring the optimizer frontend. Confirmed `GEMINI_API_KEY` is configured and reaches `generativelanguage.googleapis.com`, but the project's free-tier `gemini-3.5-flash` quota (20 `generateContent` requests/day) was exhausted, so `GeminiClient::generate()` throws `GeminiApiException: Gemini returned HTTP 429` and `ExplanationGenerator` fails open to the deterministic static explanation string, as designed. Confirmed via direct `make artisan CMD="tinker --execute=..."` calls to `GeminiClient` and to the raw Gemini HTTP endpoint (reading `RESOURCE_EXHAUSTED` / `GenerateRequestsPerDayPerProjectPerModel-FreeTier` in the response body).
+
+Added a `docs/TROUBLESHOOTING.md` entry ("Gemini returns HTTP 429...") documenting the tinker probe command and the quota-vs-other-failure distinction, since the API surface intentionally hides which failure mode caused a static fallback. No code changes; quota resets daily and the 30-day Redis prose cache means the daily budget covers many more than 20 optimizer calls once caches are warm.
+
+-> commit `400a1e8` on branch `Phase-5`
+
+---
+
 ## [2026-07-06] Cortex Lite - Phase 5 optimizer frontend shipped
 
 Executed `docs/superpowers/plans/2026-07-06-phase-5-optimizer-frontend.md` on branch `Phase-5`, closing the build-plan gap where the optimizer backend had no visible UI. Added the protected `/optimizer` page wiring `POST /api/recommend` and `POST /api/reverse`: debounced game picker, reused `HardwareAutocomplete`, RAM input, goal selector, forward/reverse mode toggle, structured reverse-mode current-settings form, free-tier usage counters, and quota-402 upgrade flow reusing the Stripe checkout helper. Entry points: Dashboard nav + "Optimize a game" CTA, per-game "Optimize" links in the Library (game passed via router state since `GET /api/games/{id}` does not exist), and the `/hardware` page now shares a `localStorage` hardware profile (`cortex.hardwareProfile`) with the optimizer instead of its stale "feeds Phase 5" note.
