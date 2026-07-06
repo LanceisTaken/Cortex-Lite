@@ -10,6 +10,7 @@ use App\Http\Controllers\GameController;
 use App\Http\Controllers\HardwareController;
 use App\Http\Controllers\PlaySessionController;
 use App\Http\Controllers\RecommendationController;
+use App\Http\Controllers\ReverseController;
 use App\Http\Controllers\SteamAuthController;
 use App\Http\Controllers\SteamSyncController;
 use App\Http\Controllers\UserController;
@@ -64,6 +65,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/recommend', [RecommendationController::class, 'store'])
         ->middleware('throttle:30,1')
         ->name('recommend');
+
+    Route::post('/reverse', [ReverseController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('reverse');
 
     Route::post('/sessions/start', [PlaySessionController::class, 'start'])
         ->middleware('throttle:30,1')
