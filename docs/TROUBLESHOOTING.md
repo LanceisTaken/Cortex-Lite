@@ -36,8 +36,8 @@ Format per entry:
 **Cause:** PHP-FPM + nginx + Redis + scheduler + queue worker on a 1 GB instance (t2.micro) exceeds available RAM the first time a Steam sync job and an LLM call overlap. The OOM killer takes down the biggest process, usually the queue worker or PHP-FPM master.
 **Fix:** Diagnose with `docker stats` — the killed container will have hit its memory limit. For prod, use t3.small (2 GB) not t2.micro; this is already the documented decision. As an emergency in-demo mitigation, stop the queue worker (`docker compose stop queue`) — Steam sync will fall back to a direct call within the request path but the demo survives. Long-term: t3.small is the answer.
 
-### LLM (Claude) call times out or returns a rate-limit error mid-request
-**Cause:** Anthropic API transient failure (timeout, 429 rate limit, 5xx). If we surface this as a 500 to the user, we've broken the core feature because of a dependency that has nothing to do with settings recommendations.
+### LLM (Gemini) call times out or returns a rate-limit error mid-request
+**Cause:** Gemini API transient failure (timeout, 429 rate limit, 5xx). If we surface this as a 500 to the user, we've broken the core feature because of a dependency that has nothing to do with settings recommendations.
 **Fix:** `ExplanationGenerator` MUST catch all upstream failures and return a static fallback string (e.g., "These settings target [goal] performance on your hardware. See the settings table above for details."). The rule-based recommendation itself is unaffected — the user still gets the settings JSON. Log the upstream failure to CloudWatch for observability, but never propagate it to the response status.
 
 ### Verify AWS teardown was actually complete (bill is $0/day again)

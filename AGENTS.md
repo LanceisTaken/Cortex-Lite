@@ -5,7 +5,7 @@ Read at the start of every session. This file is the persistent context for this
 **Session start:** Before doing anything else, read the most recent entry (topmost, under "Most recent first") in `SESSION_LOG.md` to see what the previous agent did and pick up where it left off.
 
 ## Project identity
-Cortex Lite — a Laravel/React/MySQL/Redis/Docker/AWS portfolio web app. PC gaming companion: Steam-connected game library, manual session tracking, AI-assisted graphics settings optimizer (rule-based engine + Codex Haiku for prose explanations only), and Stripe freemium tier. Built to demonstrate skills for a Razer Software Engineer JD.
+Cortex Lite — a Laravel/React/MySQL/Redis/Docker/AWS portfolio web app. PC gaming companion: Steam-connected game library, manual session tracking, AI-assisted graphics settings optimizer (rule-based engine + Gemini API for prose explanations only), and Stripe freemium tier. Built to demonstrate skills for a Razer Software Engineer JD.
 
 ## Repo layout
 The repo root is the Laravel project. Key non-standard paths:
@@ -65,7 +65,7 @@ What the project is, how to run it locally (`make up`), sprint changelog, screen
 Created in Phase 6. Describes the hypothetical native-agent telemetry payload schema (scope, auth, payload shape, update cadence, privacy, security boundaries). Answers the interview question "why didn't you build the agent?" with an engineering artifact. Do not create this file until Phase 6.
 
 ## Key architectural rules — enforce these in every code change
-1. **The LLM never decides settings.** `RecommendationEngine` and `SettingsDiffEngine` are fully deterministic. `ExplanationGenerator` calls Haiku only to write prose from a structured input it receives — it never constructs recommendations.
+1. **The LLM never decides settings.** `RecommendationEngine` and `SettingsDiffEngine` are fully deterministic. `ExplanationGenerator` calls Gemini only to write prose from a structured input it receives — it never constructs recommendations.
 2. **Redis cache keys must never include timestamps or request-unique values.** Cache keys for LLM responses must be `(game_id, gpu_tier, cpu_tier, ram_bucket, goal)` for forward mode and `hash(diff_structure, hardware_tier, goal)` for reverse mode. A timestamp-in-key bug multiplies LLM cost 1000×. Unit-test cache key construction.
 3. **Sanctum SPA auth only.** Cookie-based, CSRF-protected, stateful. No API tokens for the first-party React client.
 4. **Free tier gates usage volume, not catalog.** All games get recommendations. Free users get 3 recommendations + 5 reverse-mode calls per rolling 30-day window. Never restrict which games appear.
@@ -77,7 +77,7 @@ Created in Phase 6. Describes the hypothetical native-agent telemetry payload sc
 PHPUnit feature tests must cover: auth flows (register, login, throttle 429 + Retry-After, CSRF rejection, mass-assignment protection), authorization boundaries + IDOR on every resource endpoint (User A cannot touch User B's games/sessions), Steam integration with `Http::fake()` (OpenID happy path, direct SteamID64 fallback, private-profile rejection, transactional rollback), session constraints (one active session per user, locking), recommendation engine determinism (known inputs → expected outputs), anchor regression tests (heuristic output matches curated anchors), SettingsDiffEngine correctness, LLM cache-key construction, Stripe webhook (wrong signature → 400, cancellation → is_premium false).
 
 ## Stack reference
-Laravel 13, PHP 8.4, MySQL 8.4, Redis 7, React 19 (Vite), Tailwind, Laravel Sanctum (SPA mode), Laravel Cashier (Stripe), Laravel Scheduler, Laravel Queue, Docker Compose (6 services), GitHub Actions CI, AWS (Phase 6: EC2 t3.small, RDS MySQL, ECR, CloudFront, Parameter Store, CloudWatch), Anthropic Codex Haiku (`Codex-haiku-4-5-20251001`), Steam Web API (OpenID + GetOwnedGames with `include_appinfo=1&include_played_free_games=1`), PCGamingWiki Cargo API, Stripe.
+Laravel 13, PHP 8.4, MySQL 8.4, Redis 7, React 19 (Vite), Tailwind, Laravel Sanctum (SPA mode), Laravel Cashier (Stripe), Laravel Scheduler, Laravel Queue, Docker Compose (6 services), GitHub Actions CI, AWS (Phase 6: EC2 t3.small, RDS MySQL, ECR, CloudFront, Parameter Store, CloudWatch), Gemini API (`gemini-3.5-flash`), Steam Web API (OpenID + GetOwnedGames with `include_appinfo=1&include_played_free_games=1`), PCGamingWiki Cargo API, Stripe.
 
 ## Phase tracker (update this as phases complete)
 - [x] Phase 0 — Setup, Docker, CI

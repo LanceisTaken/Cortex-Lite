@@ -52,7 +52,7 @@ Format per entry:
 
 ### Redis for LLM response caching
 **Date:** 2026-07-01
-**Decision:** Cache LLM (Claude Haiku) responses in Redis keyed by the deterministic inputs to the recommendation.
+**Decision:** Cache LLM (Gemini API) responses in Redis keyed by the deterministic inputs to the recommendation.
 **Rationale:** Two users with the same GPU tier, CPU tier, RAM bucket, game, and goal get identical prose — running the LLM twice wastes tokens and adds latency. Caching by the deterministic input tuple gives high hit rate for popular (game × hardware × goal) combinations, capping cost.
 **Alternatives considered:** No caching (rejected — costs scale linearly with request volume, no ceiling). Cache-by-response-hash (rejected — cache is populated only after the call is made, so it doesn't prevent the first hit).
 **Consequences:** Cache key construction MUST NOT include timestamps or request-unique values — a timestamp-in-key bug multiplies LLM cost 1000×. Enforced via a dedicated unit test on the cache key builder. Forward-mode key: `(game_id, gpu_tier, cpu_tier, ram_bucket, goal)`. Reverse-mode key: `hash(diff_structure, hardware_tier, goal)`.
@@ -77,6 +77,13 @@ Format per entry:
 **Rationale:** Hallucination cannot affect user-facing settings advice if the LLM cannot decide settings. The rule-based `RecommendationEngine` and `SettingsDiffEngine` are the source of truth; the LLM is a formatter. This is the honest interview answer to "what if the LLM hallucinates?"
 **Alternatives considered:** LLM decides settings, rule engine validates (rejected — validation is hard to make exhaustive; users could still hit bad recommendations for niche games). LLM decides and explains in one prompt (rejected — same hallucination surface, harder to unit-test, no deterministic fallback).
 **Consequences:** Every recommendation is deterministic and unit-testable end-to-end (input → structured settings). LLM outages degrade the UX (prose replaced by a static fallback string) but never break the core feature. This constraint is a load-bearing part of the interview narrative.
+
+### Gemini API over Claude Haiku for explanation prose
+**Date:** 2026-07-06
+**Decision:** Use the Gemini API for `ExplanationGenerator` prose instead of Claude Haiku, with `GEMINI_MODEL=gemini-3.5-flash` pinned in `.env.example`.
+**Rationale:** The LLM only writes short explanations from deterministic structured input, so the selection criteria are low setup friction, predictable cost, and enough writing quality for 3-4 sentence explanations. Gemini's developer API has a free getting-started tier, which is a better fit for a portfolio build and local demo work than requiring an upfront Claude API credit purchase/minimum top-up before the feature can even be exercised.
+**Alternatives considered:** Claude Haiku (rejected because the quality would be fine, but the upfront billing/top-up friction is worse for this project's low-volume demo usage). A fully static explanation string forever (rejected because the AI-integration requirement is specifically about producing natural-language explanations, while still keeping settings deterministic). A flagship Gemini/Claude model (rejected because this task does not need frontier reasoning and would weaken the cost-control story).
+**Consequences:** Phase 5 implementation should read `config('services.gemini.api_key')` and `config('services.gemini.model')`, never `ANTHROPIC_*` env keys. The Redis cache-key rules and the "LLM never decides settings" boundary stay unchanged. If Gemini is unavailable or quota-limited, `ExplanationGenerator` must return the static fallback explanation rather than failing the recommendation request.
 
 ### Reverse mode as rule-based diff (SettingsDiffEngine), not LLM judgment
 **Date:** 2026-07-01

@@ -4,7 +4,7 @@
 
 **Product concept:** A web companion app for PC gamers. Connects to Steam (via OpenID) to auto-import your library, lets you track play sessions, and provides AI-assisted graphics-settings recommendations based on your hardware and goal (performance vs quality). Free tier is fully featured but rate-limited; premium tier removes the cap.
 
-**Stack:** Laravel · MySQL · Redis · React · Stripe · Docker · AWS · Anthropic Claude Haiku · Steam Web API · PCGamingWiki API
+**Stack:** Laravel · MySQL · Redis · React · Stripe · Docker · AWS · Gemini API · Steam Web API · PCGamingWiki API
 
 **Time-boxed effort:** ~7 phases + one 1-day spike, ~6–8 weeks part-time. Per-phase budgets below with defined fallbacks if a phase overruns.
 
@@ -22,7 +22,7 @@
 > - **Docs split.** `ARCHITECTURE.md` for system design, `DECISIONS.md` (ADR-style) for the tradeoff log, `TROUBLESHOOTING.md` for failure modes.
 > - **Monthly recommendation count → rolling 30-day window** via a `created_at >= now() - interval 30 day` count on the recommendations table. No reset job; no thundering herd.
 > - **Database transactions** wrapped around Steam bulk-insert and session start/end flows.
-> - **Anthropic model ID pinned** in `.env.example`.
+> - **Gemini model ID pinned** in `.env.example`.
 > - **Steam API call params specified:** `include_appinfo=1&include_played_free_games=1` + cover-art URL pattern.
 > - **Multi-stage Dockerfile** for React → nginx specified; `.dockerignore` mandated.
 > - **Demo seed account** with a known-public Steam profile defined for the live deployment.
@@ -94,7 +94,7 @@
   - `queue` — same image as `app`, runs `php artisan queue:work`
 - [ ] **Write a multi-stage `Dockerfile` for production:** stage 1 builds the React app (`npm run build` in `client/`), stage 2 is the nginx container that serves the build output as static files. Documented in `ARCHITECTURE.md`. In dev, the Vite dev server runs on the host for HMR speed.
 - [ ] **Add `.dockerignore`** excluding `node_modules`, `vendor`, `.git`, `storage/logs`, `.env`. Prevents 2GB images on ECR push.
-- [ ] Create `.env.example` with every variable across all phases. Stripe keys, Steam API key, **`ANTHROPIC_MODEL=claude-haiku-4-5-20251001`** (pin the exact model ID), `ANTHROPIC_API_KEY`, PCGamingWiki user-agent string, DB creds — all listed (values blank).
+- [ ] Create `.env.example` with every variable across all phases. Stripe keys, Steam API key, **`GEMINI_MODEL=gemini-3.5-flash`** (pin the exact model ID), `GEMINI_API_KEY`, PCGamingWiki user-agent string, DB creds — all listed (values blank).
 - [ ] Document the React/Docker split: comment in `docker-compose.yml` and a note in `README.md`. *"Vite dev server runs on the host (`npm run dev`) for hot-reload performance. In production, the build output is served as static files by the `nginx` container via the multi-stage Dockerfile."*
 - [ ] Configure Laravel `.env` to point at the Docker MySQL and Redis services.
 - [ ] Run Laravel migrations against the Dockerized MySQL.
@@ -266,7 +266,7 @@
 
 ### LLM-generated explanation
 
-- [ ] Choose provider: **Anthropic Claude Haiku** (pinned model ID via `ANTHROPIC_MODEL=claude-haiku-4-5-20251001` in `.env.example`). Document the choice in `DECISIONS.md`: fast, cheap, good at structured-explanation tasks.
+- [ ] Choose provider: **Gemini API** (pinned model ID via `GEMINI_MODEL=gemini-3.5-flash` in `.env.example`). Document the choice in `DECISIONS.md`: fast, cost-effective, good at structured-explanation tasks.
 - [ ] Build an `ExplanationGenerator` service used by both modes. Forward mode: input is the recommendation + hardware/goal; output is 3–4 sentences explaining why those settings make sense. Reverse mode: input is the diff + hardware/goal; output is 3–4 sentences explaining each change in the diff.
 - [ ] **Prompt design — the LLM never decides settings; it only explains.** State this constraint explicitly in `DECISIONS.md`.
 - [ ] **Cache LLM responses in Redis.** Forward-mode cache key: `(game_id, gpu_tier, cpu_tier, ram_bucket, goal)`. Reverse-mode cache key: `hash(diff_structure, hardware_tier, goal)` — most pasted-JSON inputs map to the same diff shape, so cache hit rate is still high. **Unit-test the cache key construction** to prevent timestamp-in-key bugs (a single accidental timestamp can multiply LLM cost 1000×).
@@ -293,7 +293,7 @@
 - [ ] React UI: usage counters on the dashboard ("2 / 3 recommendations used in the last 30 days"), upgrade button, soft-locked state for free users at quota.
 - [ ] End-of-phase: update `DECISIONS.md` (rolling-window choice, LLM-safety pattern, sync explanation choice). Update `TROUBLESHOOTING.md` (Stripe CLI test-mode walkthrough: `stripe listen --forward-to localhost/api/stripe/webhook`, `stripe trigger checkout.session.completed`).
 
-**Resume bullet (earn before claiming):** *"Built a hybrid recommendation engine combining a deterministic rule-based core with LLM-generated natural-language explanations (Anthropic Claude Haiku, pinned model ID), reverse-mode settings-diff feedback also rule-based to preserve the no-hallucination guarantee, Redis caching with unit-tested cache-key construction for cost control, graceful LLM-failure fallback, and a Stripe-gated freemium model enforcing rolling 30-day quotas via event-table counts (no thundering-herd reset job)."*
+**Resume bullet (earn before claiming):** *"Built a hybrid recommendation engine combining a deterministic rule-based core with LLM-generated natural-language explanations (Gemini API, pinned model ID), reverse-mode settings-diff feedback also rule-based to preserve the no-hallucination guarantee, Redis caching with unit-tested cache-key construction for cost control, graceful LLM-failure fallback, and a Stripe-gated freemium model enforcing rolling 30-day quotas via event-table counts (no thundering-herd reset job)."*
 
 ---
 
@@ -323,7 +323,7 @@ If your AWS account was created on or after July 15, 2025: no 12-month per-servi
 - [ ] **RDS MySQL db.t4g.micro** in the same VPC. Security group permits port 3306 only from the EC2 security group.
 - [ ] **Redis in-container on EC2**, NOT ElastiCache. State the tradeoff openly in `DECISIONS.md`: *"For this workload, in-container Redis on EC2 is the right call. ElastiCache would be correct at multi-instance scale where Redis state must outlive any single EC2 instance — that's not the case here."*
 - [ ] **ECR** for Docker image storage.
-- [ ] **Parameter Store (Systems Manager)** for all secrets — Stripe keys, Steam API key, Anthropic API key, DB password. Injected at container start. **No `.env` files on disk in production.**
+- [ ] **Parameter Store (Systems Manager)** for all secrets — Stripe keys, Steam API key, Gemini API key, DB password. Injected at container start. **No `.env` files on disk in production.**
 - [ ] **CloudFront in front of EC2** using the free default `*.cloudfront.net` domain. **HTTPS is non-optional.**
 - [ ] **CloudFront cache behavior carve-out for `/api/stripe/webhook`:**
   - Behavior pattern: `/api/stripe/webhook`
@@ -409,7 +409,7 @@ If your AWS account was created on or after July 15, 2025: no 12-month per-servi
 | Agile/Scrum signal | Sprint-tagged commits + README changelog |
 | AWS | Phase 6 (EC2, RDS, ECR, CloudFront, Parameter Store, CloudWatch) |
 | Docker | Phase 0 + Phase 6 (multi-service Compose, multi-stage Dockerfile, ECR deployment) |
-| **AI integration** | Phase 5 (Anthropic API for explanations — both forward and reverse modes) |
+| **AI integration** | Phase 5 (Gemini API for explanations — both forward and reverse modes) |
 | **External API integration** | Phases 2, 4 (Steam OpenID + Web API, PCGamingWiki Cargo) |
 | Payment gateway | Phase 5 (Stripe + Cashier + webhook signature + CloudFront carve-out) |
 | Unit & feature testing | Phases 1, 2, 3, 4, 5 (PHPUnit, including security-flavored tests and anchor regression tests) |
@@ -428,7 +428,7 @@ If your AWS account was created on or after July 15, 2025: no 12-month per-servi
 |---|------|------------|
 | 1 | AWS billing surprise from $200 credit pool | $20 Budgets alert before any provisioning. No NAT Gateway. t3.small (not larger). Tear down within 48 hours of going live. |
 | 2 | Phase 4 consumes more time than budgeted | The 1-day spike at the start of Phase 4 makes the PCGamingWiki keep/skip decision early. If skipped, the anchor dataset + heuristic engine ship on their own — fully demoable. |
-| 3 | LLM API costs unexpected spike | Redis-cache identical-input requests aggressively. Unit-test cache key construction (timestamp-in-key is the classic bug). Cap per-user usage via the rolling-window check. Use Haiku, not flagship. |
+| 3 | LLM API costs unexpected spike | Redis-cache identical-input requests aggressively. Unit-test cache key construction (timestamp-in-key is the classic bug). Cap per-user usage via the rolling-window check. Use a cost-effective Gemini Flash model, not a flagship model. |
 | 4 | Stripe webhook silent failure | CloudFront cache-behavior carve-out applied before testing. `stripe trigger` against the live URL during the 48h window, not after. CSRF-exempt the webhook route explicitly. |
 | 5 | Demo Steam connection fails because interviewer's profile is private | OpenID handles auth cleanly; the seeded demo account with a known-public profile is the fallback path. Private-profile error message points to the two specific toggles. |
 | 6 | Container OOM during demo | t3.small (2 GB) instead of t2.micro. `docker stats` check in the pre-demo checklist. Queue worker can be dropped from the live deploy as a last resort. |

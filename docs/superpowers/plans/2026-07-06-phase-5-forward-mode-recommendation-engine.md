@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- **The LLM never decides settings.** This entire engine is deterministic. No Anthropic/LLM call appears anywhere in this plan. (CLAUDE.md rule 1.)
+- **The LLM never decides settings.** This entire engine is deterministic. No Gemini/LLM call appears anywhere in this plan. (CLAUDE.md rule 1.)
 - **The recommendation engine is deterministic:** identical inputs must always produce byte-identical output. (Build plan: "The recommendation engine is deterministic.")
 - **Authorization + IDOR on every resource endpoint.** `POST /api/recommend` must scope `game_id` to the authenticated user; User A passing User B's `game_id` returns 404, never 200. (CLAUDE.md testing expectations.)
 - **Sanctum SPA auth only** — the endpoint sits behind `auth:sanctum`. (CLAUDE.md rule 3.)

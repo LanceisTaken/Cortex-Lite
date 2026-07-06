@@ -2,6 +2,16 @@
 
 Most recent first.
 
+## [2026-07-06] Cortex Lite - Gemini provider swap documented and configured
+
+Refactored the planned Phase 5 LLM explanation provider from Claude Haiku / Anthropic to the Gemini API. Updated shared config in `.env.example` to `GEMINI_API_KEY` and pinned `GEMINI_MODEL=gemini-3.5-flash`; added `config('services.gemini.*')` wiring in `config/services.php`. The local `.env` was also updated for development but remains intentionally untracked.
+
+Docs now describe Gemini instead of Claude/Anthropic across `README.md`, `AGENTS.md`, `docs/cortex-lite-build-plan.md`, `docs/TROUBLESHOOTING.md`, `docs/claude-code-setup-prompt.md`, and the Phase 5 forward-mode plan. `docs/DECISIONS.md` has a new ADR recording the provider switch: Gemini was chosen for lower setup friction and better portfolio-demo pricing fit because the task only needs short prose explanations from deterministic structured inputs. Verified with `php -l config/services.php`, targeted provider-reference searches, and `git diff --check`.
+
+-> commit `[Sprint 5] switch LLM provider docs to Gemini` on branch `Phase-5`
+
+---
+
 ## [2026-07-06] Cortex Lite - Phase 5 forward-mode recommendation backend shipped
 
 Executed the Phase 5 forward-mode recommendation engine plan on branch `Phase-5`. Added `RamBucketClassifier`, deterministic `RecommendationEngine`, and the Sanctum-protected `POST /api/recommend` endpoint with validation, IDOR-safe user-game scoping, anchor-first resolution via `setting_presets`, metadata-masked heuristic fallback, under-16GB RAM texture clamping, CPU bottleneck surfacing, and a deterministic static explanation string for the later LLM fallback path.
