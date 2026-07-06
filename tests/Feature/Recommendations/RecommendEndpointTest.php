@@ -8,6 +8,8 @@ use App\Models\Gpu;
 use App\Models\SettingPreset;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class RecommendEndpointTest extends TestCase
@@ -116,5 +118,41 @@ class RecommendEndpointTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.source', 'heuristic')
             ->assertJsonStructure(['data' => ['settings' => ['texture_quality'], 'explanation']]);
+    }
+
+    public function test_gemini_prose_is_returned_when_configured(): void
+    {
+        config()->set('services.gemini.api_key', 'test-key');
+        config()->set('services.gemini.cache_store', 'array');
+        Cache::store('array')->flush();
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [['content' => ['parts' => [['text' => 'AI-written explanation.']]]]],
+            ]),
+        ]);
+
+        [$user, $payload] = $this->scenario();
+
+        $this->actingAs($user)
+            ->postJson('/api/recommend', $payload)
+            ->assertOk()
+            ->assertJsonPath('data.explanation', 'AI-written explanation.');
+    }
+
+    public function test_falls_back_to_static_explanation_without_gemini_key(): void
+    {
+        config()->set('services.gemini.api_key', '');
+        config()->set('services.gemini.cache_store', 'array');
+        Cache::store('array')->flush();
+        Http::fake();
+
+        [$user, $payload] = $this->scenario();
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/recommend', $payload)
+            ->assertOk();
+
+        $this->assertStringContainsString('heuristic engine', (string) $response->json('data.explanation'));
+        Http::assertNothingSent();
     }
 }

@@ -91,3 +91,7 @@ This mirrors the SPA's real request pattern (browser sets `Origin` on cross-orig
 ### Games show `metadata_status = missing` but should be retried
 **Cause:** The previous enrichment attempt found no Cargo row, received malformed metadata, or hit a hard upstream failure that the portfolio-scope retry policy treats as durable.
 **Fix:** In `make shell`, reset the affected rows to pending and let the scheduler retry: `App\Models\Game::where('metadata_status', 'missing')->update(['metadata_status' => 'pending']);`.
+
+### Recommendation/reverse `explanation` is the terse static string, not AI prose
+**Cause:** `ExplanationGenerator` failed open. Either `GEMINI_API_KEY` is unset, or the Gemini API timed out, returned a non-2xx, or returned no candidate text. All of these are caught and logged as `Gemini explanation failed; serving static fallback.`, and the deterministic static explanation is returned by design.
+**Fix:** Confirm `GEMINI_API_KEY` is set and `GEMINI_MODEL` is valid. Check `storage/logs` for the `Gemini explanation failed` warning and its `message`. Verify egress to `generativelanguage.googleapis.com`. Once a call succeeds it is cached in Redis for 30 days under `llm:explain:*`; flush that prefix if you need to re-test after fixing a bad key.

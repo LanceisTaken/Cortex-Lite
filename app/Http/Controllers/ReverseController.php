@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Recommendations\ReverseRequest;
 use App\Models\Cpu;
 use App\Models\Gpu;
+use App\Services\ExplanationGenerator;
 use App\Services\SettingsDiffEngine;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 
 class ReverseController extends Controller
 {
-    public function store(ReverseRequest $request, SettingsDiffEngine $engine): JsonResponse
+    public function store(ReverseRequest $request, SettingsDiffEngine $engine, ExplanationGenerator $explanations): JsonResponse
     {
         try {
             $game = $request->user()->games()->findOrFail($request->validated('game_id'));
@@ -32,12 +33,14 @@ class ReverseController extends Controller
             $request->validated('current_settings'),
         );
 
+        $fallback = $this->fallbackExplanation($result['diff'], $result['recommendation'], $goal);
+
         return response()->json([
             'data' => [
                 'game_id' => $game->id,
                 'goal' => $goal,
                 ...$result,
-                'explanation' => $this->fallbackExplanation($result['diff'], $result['recommendation'], $goal),
+                'explanation' => $explanations->reverse($result['diff'], $result['recommendation'], $goal, $fallback),
             ],
         ]);
     }

@@ -8,6 +8,8 @@ use App\Models\Gpu;
 use App\Models\SettingPreset;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ReverseEndpointTest extends TestCase
@@ -127,5 +129,47 @@ class ReverseEndpointTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.diff', [])
             ->assertJsonStructure(['data' => ['explanation']]);
+    }
+
+    public function test_gemini_prose_is_returned_when_configured(): void
+    {
+        config()->set('services.gemini.api_key', 'test-key');
+        config()->set('services.gemini.cache_store', 'array');
+        Cache::store('array')->flush();
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [['content' => ['parts' => [['text' => 'AI diff explanation.']]]]],
+            ]),
+        ]);
+
+        [$user, $payload] = $this->scenario(
+            ['texture_quality' => 'medium'],
+            ['texture_quality' => 'ultra'],
+        );
+
+        $this->actingAs($user)
+            ->postJson('/api/reverse', $payload)
+            ->assertOk()
+            ->assertJsonPath('data.explanation', 'AI diff explanation.');
+    }
+
+    public function test_falls_back_to_static_explanation_without_gemini_key(): void
+    {
+        config()->set('services.gemini.api_key', '');
+        config()->set('services.gemini.cache_store', 'array');
+        Cache::store('array')->flush();
+        Http::fake();
+
+        [$user, $payload] = $this->scenario(
+            ['texture_quality' => 'medium'],
+            ['texture_quality' => 'ultra'],
+        );
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/reverse', $payload)
+            ->assertOk();
+
+        $this->assertStringContainsString('align your settings', (string) $response->json('data.explanation'));
+        Http::assertNothingSent();
     }
 }

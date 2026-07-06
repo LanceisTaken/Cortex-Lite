@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Recommendations\RecommendRequest;
 use App\Models\Cpu;
 use App\Models\Gpu;
+use App\Services\ExplanationGenerator;
 use App\Services\RecommendationEngine;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 
 class RecommendationController extends Controller
 {
-    public function store(RecommendRequest $request, RecommendationEngine $engine): JsonResponse
+    public function store(RecommendRequest $request, RecommendationEngine $engine, ExplanationGenerator $explanations): JsonResponse
     {
         try {
             $game = $request->user()->games()->findOrFail($request->validated('game_id'));
@@ -24,13 +25,14 @@ class RecommendationController extends Controller
         $goal = $request->validated('goal');
 
         $result = $engine->recommend($game, $gpu, $cpu, (int) $request->validated('ram_gb'), $goal);
+        $fallback = $this->fallbackExplanation($result, $goal);
 
         return response()->json([
             'data' => [
                 'game_id' => $game->id,
                 'goal' => $goal,
                 ...$result,
-                'explanation' => $this->fallbackExplanation($result, $goal),
+                'explanation' => $explanations->forward($result, $goal, $game->id, $fallback),
             ],
         ]);
     }

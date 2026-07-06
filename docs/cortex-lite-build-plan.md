@@ -266,13 +266,13 @@
 
 ### LLM-generated explanation
 
-- [ ] Choose provider: **Gemini API** (pinned model ID via `GEMINI_MODEL=gemini-3.5-flash` in `.env.example`). Document the choice in `DECISIONS.md`: fast, cost-effective, good at structured-explanation tasks.
-- [ ] Build an `ExplanationGenerator` service used by both modes. Forward mode: input is the recommendation + hardware/goal; output is 3–4 sentences explaining why those settings make sense. Reverse mode: input is the diff + hardware/goal; output is 3–4 sentences explaining each change in the diff.
-- [ ] **Prompt design — the LLM never decides settings; it only explains.** State this constraint explicitly in `DECISIONS.md`.
-- [ ] **Cache LLM responses in Redis.** Forward-mode cache key: `(game_id, gpu_tier, cpu_tier, ram_bucket, goal)`. Reverse-mode cache key: `hash(diff_structure, hardware_tier, goal)` — most pasted-JSON inputs map to the same diff shape, so cache hit rate is still high. **Unit-test the cache key construction** to prevent timestamp-in-key bugs (a single accidental timestamp can multiply LLM cost 1000×).
-- [ ] **Handle LLM API failures gracefully.** Timeouts, content filtering, rate limits — return the structured recommendation/diff with a fallback static explanation rather than failing the whole request. Document in `TROUBLESHOOTING.md`.
-- [ ] **Decide sync vs async for the LLM call.** Sync (simpler, ~2–3s response on cache miss, acceptable for cold path). Async via queue with UI polling (more code, snappier UX). Pick sync for v1 with a UI loading state; document the tradeoff in `DECISIONS.md`.
-- [ ] React UI: hardware-selection form, game-search field, goal selector (performance/balanced/quality), submit button, results card showing the settings table and the LLM explanation. Reverse mode: paste box + same hardware/goal selectors + results showing the diff table + explanation.
+- [x] Choose provider: **Gemini API** (pinned model ID via `GEMINI_MODEL=gemini-3.5-flash` in `.env.example`). Document the choice in `DECISIONS.md`: fast, cost-effective, good at structured-explanation tasks.
+- [x] Build an `ExplanationGenerator` service used by both modes. Forward mode: input is the recommendation + hardware/goal; output is 3–4 sentences explaining why those settings make sense. Reverse mode: input is the diff + hardware/goal; output is 3–4 sentences explaining each change in the diff.
+- [x] **Prompt design — the LLM never decides settings; it only explains.** State this constraint explicitly in `DECISIONS.md`.
+- [x] **Cache LLM responses in Redis.** Forward-mode cache key: `(game_id, gpu_tier, cpu_tier, ram_bucket, goal)`. Reverse-mode cache key: `hash(diff_structure, hardware_tier, goal)` — most pasted-JSON inputs map to the same diff shape, so cache hit rate is still high. **Unit-test the cache key construction** to prevent timestamp-in-key bugs (a single accidental timestamp can multiply LLM cost 1000×).
+- [x] **Handle LLM API failures gracefully.** Timeouts, content filtering, rate limits — return the structured recommendation/diff with a fallback static explanation rather than failing the whole request. Document in `TROUBLESHOOTING.md`.
+- [x] **Decide sync vs async for the LLM call.** Sync (simpler, ~2–3s response on cache miss, acceptable for cold path). Async via queue with UI polling (more code, snappier UX). Pick sync for v1 with a UI loading state; document the tradeoff in `DECISIONS.md`.
+- [ ] React UI: hardware-selection form, game-search field, goal selector (performance/balanced/quality), submit button, results card showing the settings table and the LLM explanation. Reverse mode: paste box + same hardware/goal selectors + results showing the diff table + explanation. **Deferred to a dedicated optimizer-UI plan; no frontend testing was requested for this backend slice.**
 
 ### Stripe premium gating (rolling 30-day window)
 
