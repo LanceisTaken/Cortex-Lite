@@ -30,6 +30,7 @@ System design and infrastructure. Update when adding or removing services, chang
 - The scheduler runs `games:enrich-metadata` every five minutes with overlap protection. The command consumes `games.metadata_status = pending`, writes `game_metadata`, and flips each attempted game to `ok` or `missing`; rows blocked by PCGamingWiki rate limiting remain `pending`.
 - `App\Services\HeuristicRecommender` is deterministic. It constructs the default settings schema from GPU tier, goal, and PCGamingWiki capability flags; no LLM participates in settings selection.
 - Stripe subscriptions are created through Cashier Checkout at `POST /api/checkout`. Stripe webhooks post to `/api/stripe/webhook`; the route is signature-verified and syncs `users.is_premium` from Cashier subscription state.
+- The React `/optimizer` page is the frontend for both optimizer modes: forward recommendations via `POST /api/recommend` and reverse-mode diffs via `POST /api/reverse`. Hardware selection (GPU/CPU/RAM) is shared with `/hardware` through a `localStorage` profile; no server-side hardware state exists.
 
 ## Security model
 

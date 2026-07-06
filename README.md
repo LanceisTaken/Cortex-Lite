@@ -34,6 +34,7 @@ Common tasks: `make test`, `make shell`, `make logs`, `make artisan CMD="route:l
 - **Sprint 4b - PCGamingWiki metadata pipeline.** Added the `game_metadata` table, `PcGamingWikiClient`, Redis token-bucket limiter, AppID-only 7-day metadata cache, scheduled `games:enrich-metadata` command, and library-row metadata status badge. Pending Steam imports are enriched through PCGamingWiki Cargo and flipped to `ok` or `missing` for Phase 5's recommender masking.
 - **Sprint 5 - AI optimizer backend.** Added deterministic forward recommendations, reverse-mode settings diffs, and AI explanations via `gemini-3.5-flash`. Gemini prose is cached in Redis by deterministic inputs and falls back to static strings so the LLM can never fail or alter a recommendation.
 - **Sprint 5 - Stripe premium gating.** Added rolling 30-day free-tier quotas (3 recommendations / 5 reverse-mode calls), usage counters, $5/mo Cortex Premium checkout, and signature-verified Stripe webhooks that sync `is_premium` from Cashier subscription state.
+- **Sprint 5 - Optimizer UI.** New `/optimizer` page wires the recommendation and reverse-mode endpoints — game picker, shared GPU/CPU/RAM profile (localStorage), goal selector, forward/reverse toggle, results styled as an in-game video-settings panel with quality notch meters, diff view, Gemini explanations, free-tier usage counters, and quota-402 upgrade flow.
 
 ## Screenshots
 

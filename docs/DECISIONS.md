@@ -329,3 +329,17 @@ Format per entry:
 **Rationale:** Cache hits are instant and cold misses are acceptable behind the UI loading state. A queue and polling contract would add more moving parts before there is evidence the cold path is a real bottleneck.
 **Alternatives considered:** Queue-based explanation generation plus client polling (deferred because it complicates the API for a narrow latency win).
 **Consequences:** Cold-path optimizer requests wait on the Gemini timeout budget, but the deterministic recommendation/diff still returns with a static explanation if Gemini fails.
+
+### Structured reverse-mode settings form over free-form key/value input
+**Date:** 2026-07-06
+**Decision:** The optimizer's reverse mode collects current settings through a fixed form built from the heuristic vocabulary (resolution_scale, upscaling, ray_tracing, shadow_quality, texture_quality, anti_aliasing, ambient_occlusion), with per-row "Not set" opt-outs.
+**Rationale:** SettingsComparator iterates recommended keys and silently ignores unknown pasted keys. Free-form input would let users type keys that do nothing, which reads as a bug in a demo. A fixed vocabulary guarantees every entered value can participate in the diff.
+**Alternatives considered:** Free-form key/value rows (rejected: silent-ignore footgun); paste-a-blob text parsing (rejected: fragile, out of scope).
+**Consequences:** Anchor-preset keys outside the shared vocabulary are never diffed. Acceptable: the comparator already defines recommended-keys-only semantics, and the form can grow columns later.
+
+### Client-side localStorage hardware profile over server-side persistence
+**Date:** 2026-07-06
+**Decision:** The selected GPU/CPU/RAM persists in `localStorage` (`cortex.hardwareProfile`), shared between `/hardware` and `/optimizer`. No server-side profile table.
+**Rationale:** Phase 5 needs a smooth demo flow (pick hardware once, optimize many games) without expanding backend scope. The recommend/reverse endpoints already take hardware per-request, so no server state is required for correctness.
+**Alternatives considered:** Users-table columns + profile endpoint (rejected for Phase 5: schema churn and IDOR/test surface for a value the client already holds); no persistence (rejected: tedious in the evaluator demo).
+**Consequences:** Profile does not roam across browsers/devices. A server-side profile can supersede this later without breaking the API contract.

@@ -2,6 +2,18 @@
 
 Most recent first.
 
+## [2026-07-06] Cortex Lite - Phase 5 optimizer frontend shipped
+
+Executed `docs/superpowers/plans/2026-07-06-phase-5-optimizer-frontend.md` on branch `Phase-5`, closing the build-plan gap where the optimizer backend had no visible UI. Added the protected `/optimizer` page wiring `POST /api/recommend` and `POST /api/reverse`: debounced game picker, reused `HardwareAutocomplete`, RAM input, goal selector, forward/reverse mode toggle, structured reverse-mode current-settings form, free-tier usage counters, and quota-402 upgrade flow reusing the Stripe checkout helper. Entry points: Dashboard nav + "Optimize a game" CTA, per-game "Optimize" links in the Library (game passed via router state since `GET /api/games/{id}` does not exist), and the `/hardware` page now shares a `localStorage` hardware profile (`cortex.hardwareProfile`) with the optimizer instead of its stale "feeds Phase 5" note.
+
+Design (frontend-design skill): results render as an in-game video-settings panel — dark slate-950 surface inside the light app, mono OSD-style labels, 4-notch quality meters for ordinal levels, single emerald "optimized" accent, rose for suboptimal current values in the diff, and one panel-reveal animation respecting `prefers-reduced-motion`. Shared display helpers live in `settingsDisplay.js` to keep oxlint's fast-refresh rule clean (same reason `SETTING_FIELDS` stayed module-private).
+
+Docs updated: two new DECISIONS entries (structured reverse form; localStorage hardware profile), README Sprint 5 changelog line, ARCHITECTURE external-integrations note, build-plan React UI item checked off. Verified with `npm run lint` (only pre-existing AuthContext warning), `npm run build`, and `make test`. Browser smoke test of the live flow was not run in-session — needs `make up` + `npm run dev` + a logged-in account.
+
+-> commits `604ac65`, `8c4b3a3`, `afa3860`, `70be5cd`, `2b24919`, `eeed2ec` + docs commit on branch `Phase-5`
+
+---
+
 ## [2026-07-06] Cortex Lite - Phase 5 Stripe premium gating shipped
 
 Added the Phase 5 freemium billing slice on branch `Phase-5`: rolling 30-day `usage_events` quota enforcement for recommendation and reverse-mode calls, `is_premium` user state synced from Cashier subscription webhooks, Stripe Checkout creation, `/api/usage` counters, and dashboard usage/upgrade UI. Docs and execution plans now record the quota, webhook, Cashier, and sync-LLM tradeoffs; tests were intentionally not run in this closeout at user request.
