@@ -1,5 +1,5 @@
-<!-- base-commit: 0582f6f0d561dcb0a283a3d65c9421d876035a1b -->
-<!-- generated: 2026-07-02 -->
+<!-- base-commit: c80d602421eae8c40eef0a5fa488d4ef2ac744db -->
+<!-- generated: 2026-07-05 -->
 
 # Code Standards
 
@@ -280,6 +280,35 @@ client/src/
 ```
 
 **New domain — create four things together:** model, migration + factory, controller, feature test file. Route line goes in `routes/api.php` under a domain comment.
+
+**Reference/lookup data lives in `database/data/*.json`, ingested by an idempotent seeder.** The seeder reads the JSON, derives any computed columns via a `Support/` classifier, and `upsert()`s so re-running `make artisan CMD="db:seed"` never duplicates rows.
+
+```php
+// DO — from database/seeders/GpuSeeder.php
+$rows = json_decode((string) file_get_contents(database_path('data/gpus.json')), true, flags: JSON_THROW_ON_ERROR);
+$records = array_map(fn (array $row) => [..., 'tier' => GpuTierClassifier::classify($row['g3d_mark']), ...], $rows);
+DB::table('gpus')->upsert($records, uniqueBy: ['name'], update: [...]);
+```
+
+**Pure derivation logic goes in `App\Support\<Domain>\*`, not inline in the seeder or a service.** One `final class` per concern, a `public const` for thresholds/config, a single `public static` entry point — no instantiation, no side effects.
+
+```php
+// DO — from app/Support/Hardware/GpuTierClassifier.php
+final class GpuTierClassifier
+{
+    public const THRESHOLDS = ['low_max' => 7999, 'mid_max' => 13999, 'high_max' => 21999];
+
+    public static function classify(int $g3dMark): string
+    {
+        return match (true) {
+            $g3dMark <= self::THRESHOLDS['low_max'] => 'low',
+            $g3dMark <= self::THRESHOLDS['mid_max'] => 'mid',
+            $g3dMark <= self::THRESHOLDS['high_max'] => 'high',
+            default => 'enthusiast',
+        };
+    }
+}
+```
 
 ---
 
