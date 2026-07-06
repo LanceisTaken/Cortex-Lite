@@ -212,6 +212,13 @@ export default function Library() {
                   >
                     {startingGameId === game.id ? 'Starting...' : 'Start'}
                   </button>
+                  <Link
+                    to="/optimizer"
+                    state={{ game }}
+                    className="rounded-md border border-sky-300 px-3 py-2 text-sm text-sky-800 hover:bg-sky-50"
+                  >
+                    Optimize
+                  </Link>
                   <button type="button" onClick={() => { setFormGame(game); setFormOpen(true); }}
                     className="rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">
                     Edit

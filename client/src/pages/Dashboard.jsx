@@ -153,6 +153,7 @@ export default function Dashboard() {
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Cortex Lite</h1>
         <div className="flex items-center gap-3 text-sm">
+          <Link to="/optimizer" className="text-slate-600 hover:underline">Optimizer</Link>
           <Link to="/library" className="text-slate-600 hover:underline">Library</Link>
           <Link to="/history" className="text-slate-600 hover:underline">History</Link>
           <Link to="/hardware" className="text-slate-600 hover:underline">Hardware</Link>
@@ -208,15 +209,23 @@ export default function Dashboard() {
       <section className="rounded-md border border-slate-200 p-6">
         <h2 className="text-lg font-medium">Welcome, {user.name}.</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Your account is ready. Steam connection and library sync now live here,
-          while session tracking and the AI settings optimizer land in later phases.
+          Your account is ready. Sync your Steam library, track sessions, and get
+          AI-assisted graphics settings from the optimizer.
         </p>
-        <Link
-          className="mt-4 inline-flex rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          to="/hardware"
-        >
-          Hardware profile
-        </Link>
+        <div className="mt-4 flex gap-3">
+          <Link
+            className="inline-flex rounded-md border border-slate-900 bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700"
+            to="/optimizer"
+          >
+            Optimize a game
+          </Link>
+          <Link
+            className="inline-flex rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            to="/hardware"
+          >
+            Hardware profile
+          </Link>
+        </div>
       </section>
       <section className="rounded-md border border-slate-200 p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
