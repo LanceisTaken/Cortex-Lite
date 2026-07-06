@@ -52,4 +52,10 @@ return [
         'cache_store' => env('GEMINI_CACHE_STORE'),
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'price' => env('STRIPE_PRICE_PREMIUM'),
+    ],
+
 ];

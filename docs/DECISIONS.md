@@ -308,3 +308,24 @@ Format per entry:
 **Rationale:** The prose is a pure explanation of already-decided structured input, so the cache key must contain only that input and never timestamps, user request IDs, or other high-cardinality values. Success-only caching avoids poisoning Redis with static fallbacks during transient Gemini outages. Keeping the call synchronous preserves the simple v1 API contract, while fail-open behavior keeps the LLM non-load-bearing.
 **Alternatives considered:** `Cache::remember()` around the generation call (rejected because the fallback could be cached after a failure). Keying forward mode on shared Steam App ID/title for cross-user cache sharing (rejected for v1 because the build plan specifies `game_id`; per-user fragmentation is acceptable under the quota model). Async queue plus polling (rejected for v1 as more code for a cold path that already has a deterministic fallback).
 **Consequences:** `ExplanationCacheKeyTest` locks the no-timestamp key shape. Forward-mode explanation cache entries are per user-game row. The static fallback string remains the deterministic source of truth when Gemini or the cache store is unavailable.
+
+### Rolling 30-day quota via event-table count
+**Date:** 2026-07-06
+**Decision:** Free-tier optimizer limits are enforced by counting rows in `usage_events` where `user_id`, `type`, and `created_at >= now() - interval 30 day` match. Free users get 3 `recommend` calls and 5 `reverse` calls in that rolling window. There is no counter column and no reset job.
+**Rationale:** A rolling window is fairer than a calendar reset and needs no scheduled reset. The indexed `(user_id, type, created_at)` count is cheap for this portfolio-scale workload, and each successful call leaves an audit row.
+**Alternatives considered:** Monthly counter columns (rejected because they need reset logic and produce boundary weirdness); Redis counters (rejected because billing-critical quota state should survive cache flushes and match the SQL source of truth).
+**Consequences:** Every successful optimizer call writes one row, including premium calls for visibility. The table can be pruned later if it grows enough to matter. Quota enforcement is check-then-record without a lock: under concurrent free-tier requests a user can marginally exceed the cap (e.g. two simultaneous calls at used=2 both pass the 2 < 3 check). Accepted at portfolio scale - the blast radius is a few extra cached/LLM calls. The real-scale fix is to wrap the count + insert in a DB::transaction with lockForUpdate() on the user's usage rows so concurrent requests serialize.
+
+### Premium status is denormalized from Cashier subscriptions
+**Date:** 2026-07-06
+**Decision:** Laravel Cashier's customer and subscription tables remain the billing source of truth. `users.is_premium` is a denormalized fast-read flag used by quota checks and synced only from the custom `/api/stripe/webhook` controller, which extends Cashier's `WebhookController`.
+**Rationale:** Optimizer requests should not have to load subscription state to answer a simple quota question. Extending Cashier keeps Stripe subscription bookkeeping in the package while giving Cortex Lite an API-prefixed, signature-verified webhook route aligned with the CloudFront carve-out. Cashier's `stripe_id` column already stores the Stripe customer id, so no duplicate `stripe_customer_id` was added.
+**Alternatives considered:** Hand-rolled webhook handling (rejected because it reimplements Cashier's subscription updates); checking `subscribed('default')` on every optimizer request (rejected because it is heavier and less direct than the required fast flag).
+**Consequences:** `is_premium` can briefly lag Stripe until the webhook lands. `Cashier::ignoreRoutes()` disables the package route so `/api/stripe/webhook` is authoritative.
+
+### Sync LLM explanation call for v1
+**Date:** 2026-07-06
+**Decision:** Optimizer endpoints call `ExplanationGenerator` synchronously and return either cached Gemini prose, fresh Gemini prose, or the deterministic static fallback in the same response.
+**Rationale:** Cache hits are instant and cold misses are acceptable behind the UI loading state. A queue and polling contract would add more moving parts before there is evidence the cold path is a real bottleneck.
+**Alternatives considered:** Queue-based explanation generation plus client polling (deferred because it complicates the API for a narrow latency win).
+**Consequences:** Cold-path optimizer requests wait on the Gemini timeout budget, but the deterministic recommendation/diff still returns with a static explanation if Gemini fails.

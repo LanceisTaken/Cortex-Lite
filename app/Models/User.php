@@ -25,6 +25,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'steam_id_resolved_at' => 'datetime',
+            'is_premium' => 'boolean',
         ];
     }
 
@@ -36,5 +37,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function playSessions(): HasMany
     {
         return $this->hasMany(PlaySession::class);
+    }
+
+    public function usageEvents(): HasMany
+    {
+        return $this->hasMany(UsageEvent::class);
     }
 }

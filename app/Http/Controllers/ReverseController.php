@@ -7,15 +7,19 @@ use App\Models\Cpu;
 use App\Models\Gpu;
 use App\Services\ExplanationGenerator;
 use App\Services\SettingsDiffEngine;
+use App\Services\UsageQuota;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 
 class ReverseController extends Controller
 {
-    public function store(ReverseRequest $request, SettingsDiffEngine $engine, ExplanationGenerator $explanations): JsonResponse
+    public function store(ReverseRequest $request, SettingsDiffEngine $engine, ExplanationGenerator $explanations, UsageQuota $quota): JsonResponse
     {
+        $user = $request->user();
+        $quota->ensureWithinLimit($user, 'reverse');
+
         try {
-            $game = $request->user()->games()->findOrFail($request->validated('game_id'));
+            $game = $user->games()->findOrFail($request->validated('game_id'));
         } catch (ModelNotFoundException) {
             return response()->json(null, 404);
         }
@@ -34,13 +38,16 @@ class ReverseController extends Controller
         );
 
         $fallback = $this->fallbackExplanation($result['diff'], $result['recommendation'], $goal);
+        $explanation = $explanations->reverse($result['diff'], $result['recommendation'], $goal, $fallback);
+
+        $quota->record($user, 'reverse');
 
         return response()->json([
             'data' => [
                 'game_id' => $game->id,
                 'goal' => $goal,
                 ...$result,
-                'explanation' => $explanations->reverse($result['diff'], $result['recommendation'], $goal, $fallback),
+                'explanation' => $explanation,
             ],
         ]);
     }

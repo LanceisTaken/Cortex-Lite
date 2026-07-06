@@ -15,6 +15,7 @@ class UserController extends Controller
                 'name',
                 'email',
                 'email_verified_at',
+                'is_premium',
                 'steam_id',
                 'steam_id_resolved_at',
                 'created_at',

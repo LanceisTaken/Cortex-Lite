@@ -32,6 +32,8 @@ Format per entry:
 **Cause:** Not an error — this is the setup for local webhook testing when the endpoint isn't yet publicly reachable.
 **Fix:** Install the Stripe CLI. In one terminal: `stripe login` (once), then `stripe listen --forward-to localhost/api/stripe/webhook`. The CLI prints a signing secret starting with `whsec_...` — put that in `.env` as `STRIPE_WEBHOOK_SECRET` and restart the app container. In another terminal, fire events: `stripe trigger checkout.session.completed`, `stripe trigger customer.subscription.deleted`, etc. The `stripe listen` process must be running throughout — it's the tunnel.
 
+Wrong-signature requests should return HTTP 400. With no webhook secret configured, local/testing direct-handler requests skip signature verification; production must never run that way, and the controller returns HTTP 400 if the secret is empty outside `local`/`testing`.
+
 ### Container OOM during a live demo (app or queue killed)
 **Cause:** PHP-FPM + nginx + Redis + scheduler + queue worker on a 1 GB instance (t2.micro) exceeds available RAM the first time a Steam sync job and an LLM call overlap. The OOM killer takes down the biggest process, usually the queue worker or PHP-FPM master.
 **Fix:** Diagnose with `docker stats` — the killed container will have hit its memory limit. For prod, use t3.small (2 GB) not t2.micro; this is already the documented decision. As an emergency in-demo mitigation, stop the queue worker (`docker compose stop queue`) — Steam sync will fall back to a direct call within the request path but the demo survives. Long-term: t3.small is the answer.

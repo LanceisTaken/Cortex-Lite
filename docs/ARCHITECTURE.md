@@ -8,12 +8,13 @@ System design and infrastructure. Update when adding or removing services, chang
 
 ## Database schema (high-level)
 
-- `users` own account/auth state, including Cashier columns installed in Phase 1 plus nullable Steam linkage fields: `steam_id` (unique SteamID64 string) and `steam_id_resolved_at`.
+- `users` own account/auth state, including Cashier columns installed in Phase 1, denormalized `is_premium`, and nullable Steam linkage fields: `steam_id` (unique SteamID64 string) and `steam_id_resolved_at`.
 - `games` is a user-scoped library table for both manual and Steam-imported entries. Steam sync keys rows by `(user_id, steam_app_id)` so repeat syncs update the same Steam-owned row without touching manual rows with null `steam_app_id`.
 - `play_sessions` stores manual tracking history for both manual and Steam games. Open rows have `ended_at = null`; end-session writes are transactional and only increment cached `games.playtime_minutes` for manual-sourced games.
 - `gpus` and `cpus` are small reference tables seeded from `database/data/*.json`. JSON stores raw benchmark values only; `GpuTierClassifier` and `CpuTierClassifier` materialize the tier column at seed time using absolute thresholds.
 - `game_metadata` stores one PCGamingWiki enrichment row per game. It is keyed by unique `game_id`, cascade-deletes with the game, stores structured graphics capability columns, and keeps a capped `raw_response` JSON copy for forward-compatible field additions.
 - `setting_presets` stores the 30 curated anchor settings records seeded from `database/data/setting_presets.json`. The natural tuple `(game, goal, gpu_tier)` is unique; `settings` remains a flexible JSON blob because each game exposes different option names.
+- `usage_events` logs each successful optimizer call with `type = recommend|reverse`. Free-tier quota checks count rows in the last 30 days by `(user_id, type, created_at)`.
 - Game library list queries are indexed by `(user_id, status)` and `(user_id, last_played_at)`.
 - Session queries are indexed by `(user_id, ended_at)` for active lookup and `(user_id, started_at)` for history ordering.
 - Hardware typeahead queries are indexed by `(tier, g3d_mark)` for GPUs, `(tier, single_thread_mark)` for CPUs, plus unique indexed names.
@@ -28,6 +29,7 @@ System design and infrastructure. Update when adding or removing services, chang
 - PCGamingWiki Cargo API traffic is wrapped behind `App\Services\PcGamingWikiClient`. Requests use a required Cortex-Lite User-Agent with `PCGAMINGWIKI_CONTACT_EMAIL`, a Redis token-bucket limiter, and a 7-day AppID-only cache key.
 - The scheduler runs `games:enrich-metadata` every five minutes with overlap protection. The command consumes `games.metadata_status = pending`, writes `game_metadata`, and flips each attempted game to `ok` or `missing`; rows blocked by PCGamingWiki rate limiting remain `pending`.
 - `App\Services\HeuristicRecommender` is deterministic. It constructs the default settings schema from GPU tier, goal, and PCGamingWiki capability flags; no LLM participates in settings selection.
+- Stripe subscriptions are created through Cashier Checkout at `POST /api/checkout`. Stripe webhooks post to `/api/stripe/webhook`; the route is signature-verified and syncs `users.is_premium` from Cashier subscription state.
 
 ## Security model
 
@@ -35,6 +37,7 @@ System design and infrastructure. Update when adding or removing services, chang
 - Steam OpenID verification always posts `check_authentication` to the hard-coded Steam endpoint, never to a request-supplied URL.
 - Steam sync writes are transactional and only update server-owned Steam fields on `games`.
 - PCGamingWiki raw JSON is capped before persistence to avoid oversized or deeply nested payloads feeding later recommendation code.
+- The Stripe webhook route is unauthenticated and CSRF-exempt by design, but rejects invalid Stripe signatures with HTTP 400 when `STRIPE_WEBHOOK_SECRET` is configured.
 
 ## Authentication
 
@@ -68,8 +71,11 @@ Cookie-based Sanctum SPA auth. React (dev on Vite `:5173`, prod behind nginx) tr
 | GET | /api/sessions | auth:sanctum | paginated ended-session history |
 | GET | /api/hardware/gpus | auth:sanctum | top 20 GPU typeahead results ordered by G3D Mark |
 | GET | /api/hardware/cpus | auth:sanctum | top 20 CPU typeahead results ordered by single-thread PassMark |
+| GET | /api/usage | auth:sanctum | rolling 30-day free-tier usage counters |
+| POST | /api/checkout | auth:sanctum, throttle:6,1 | create a Stripe Checkout session for Cortex Premium |
+| POST | /api/stripe/webhook | Stripe signature | Cashier webhook plus `is_premium` sync |
 
 **Notification URL rewriting:**
 `VerifyEmail::createUrlUsing` and `ResetPassword::createUrlUsing` in `AppServiceProvider::boot()` rewrite the notification URLs to point at the frontend routes. The SPA verification page POSTs the preserved signed URL back to the backend to complete the flow.
 
-**Cashier installed early.** Only `Billable` trait, migrations, and the `subscription()` API surface land in Phase 1 — no Stripe routes, no webhook, no checkout UI. Those arrive in Phase 5.
+**Cashier billing surface.** Cashier's `Billable` trait and subscription tables are installed. Phase 5 adds `/api/checkout`, `/api/stripe/webhook`, and the denormalized `users.is_premium` flag used by the optimizer quota checks.

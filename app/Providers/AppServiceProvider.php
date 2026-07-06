@@ -7,12 +7,13 @@ use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Cashier\Cashier;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        Cashier::ignoreRoutes();
     }
 
     public function boot(): void

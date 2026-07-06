@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -13,8 +14,13 @@ use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\ReverseController;
 use App\Http\Controllers\SteamAuthController;
 use App\Http\Controllers\SteamSyncController;
+use App\Http\Controllers\StripeWebhookController;
+use App\Http\Controllers\UsageController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
+    ->name('cashier.webhook');
 
 Route::post('/register', [RegisterController::class, 'store'])
     ->middleware('guest')
@@ -57,6 +63,13 @@ Route::apiResource('games', GameController::class)
     ->except(['show']);
 
 Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('/usage', [UsageController::class, 'show'])
+        ->name('usage.show');
+
+    Route::post('/checkout', [CheckoutController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('checkout');
+
     Route::get('/hardware/gpus', [HardwareController::class, 'gpus'])
         ->name('hardware.gpus.search');
     Route::get('/hardware/cpus', [HardwareController::class, 'cpus'])

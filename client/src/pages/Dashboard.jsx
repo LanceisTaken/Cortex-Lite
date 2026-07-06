@@ -5,6 +5,7 @@ import { VerifiedBanner } from '../components/VerifiedBanner'
 import { ActiveSessionBanner } from '../components/sessions/ActiveSessionBanner'
 import { Button } from '../components/ui/Button'
 import { api } from '../lib/api'
+import { getUsage, startCheckout } from '../lib/usage'
 import { SteamPrivateProfileError } from '../components/steam/SteamPrivateProfileError'
 
 export default function Dashboard() {
@@ -13,6 +14,8 @@ export default function Dashboard() {
   const [steamIdInput, setSteamIdInput] = useState('')
   const [syncing, setSyncing] = useState(false)
   const [connectingSteamId, setConnectingSteamId] = useState(false)
+  const [usage, setUsage] = useState(null)
+  const [upgrading, setUpgrading] = useState(false)
   const [notice, setNotice] = useState(() => {
     if (searchParams.get('steam_connected') === '1') {
       return { type: 'success', message: 'Steam connected. You can sync your library now.' }
@@ -30,16 +33,35 @@ export default function Dashboard() {
 
     return null
   })
+  const [checkoutNotice, setCheckoutNotice] = useState(() => {
+    const status = searchParams.get('checkout')
+    if (status === 'success') {
+      return { type: 'success', message: 'Thanks for subscribing. Premium unlocks shortly after Stripe confirms payment.' }
+    }
+    if (status === 'cancelled') {
+      return { type: 'error', message: 'Checkout cancelled. No charge was made.' }
+    }
+    return null
+  })
   const [privateProfileHelp, setPrivateProfileHelp] = useState(null)
 
   useEffect(() => {
-    if (searchParams.has('steam_connected') || searchParams.has('steam_error')) {
+    if (searchParams.has('steam_connected') || searchParams.has('steam_error') || searchParams.has('checkout')) {
       const next = new URLSearchParams(searchParams)
       next.delete('steam_connected')
       next.delete('steam_error')
+      next.delete('checkout')
       setSearchParams(next, { replace: true })
     }
   }, [searchParams, setSearchParams])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    getUsage({ signal: controller.signal })
+      .then(setUsage)
+      .catch(() => {})
+    return () => controller.abort()
+  }, [])
 
   async function handleSync() {
     setSyncing(true)
@@ -115,6 +137,17 @@ export default function Dashboard() {
     window.location.assign('/api/steam/login')
   }
 
+  async function handleUpgrade() {
+    setUpgrading(true)
+    try {
+      const url = await startCheckout()
+      window.location.assign(url)
+    } catch {
+      setCheckoutNotice({ type: 'error', message: 'Could not start checkout. Please try again.' })
+      setUpgrading(false)
+    }
+  }
+
   return (
     <div className="mx-auto mt-10 w-full max-w-2xl space-y-6 px-4">
       <header className="flex items-center justify-between">
@@ -129,6 +162,49 @@ export default function Dashboard() {
       </header>
       <ActiveSessionBanner />
       <VerifiedBanner user={user} />
+      <section className="rounded-md border border-slate-200 p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Cortex Premium</h2>
+          {user.is_premium ? (
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">
+              Premium
+            </span>
+          ) : null}
+        </div>
+
+        {checkoutNotice ? (
+          <div
+            className={`mt-3 rounded-md border p-3 text-sm ${
+              checkoutNotice.type === 'success'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                : 'border-rose-200 bg-rose-50 text-rose-900'
+            }`}
+          >
+            {checkoutNotice.message}
+          </div>
+        ) : null}
+
+        {user.is_premium ? (
+          <p className="mt-2 text-sm text-slate-600">
+            You have unlimited recommendations and reverse-mode calls. Thanks for supporting Cortex Lite.
+          </p>
+        ) : usage ? (
+          <div className="mt-3 space-y-3">
+            <UsageMeter label="Recommendations" line={usage.recommend} windowDays={usage.window_days} />
+            <UsageMeter label="Reverse-mode calls" line={usage.reverse} windowDays={usage.window_days} />
+            {usage.recommend.remaining === 0 || usage.reverse.remaining === 0 ? (
+              <p className="text-sm text-rose-700">
+                You have hit a free-tier cap. Upgrade for unlimited access.
+              </p>
+            ) : null}
+            <Button type="button" onClick={handleUpgrade} disabled={upgrading}>
+              {upgrading ? 'Starting checkout...' : 'Upgrade to Premium - $5/mo'}
+            </Button>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-slate-500">Loading usage...</p>
+        )}
+      </section>
       <section className="rounded-md border border-slate-200 p-6">
         <h2 className="text-lg font-medium">Welcome, {user.name}.</h2>
         <p className="mt-1 text-sm text-slate-600">
@@ -209,6 +285,27 @@ export default function Dashboard() {
           </form>
         ) : null}
       </section>
+    </div>
+  )
+}
+
+function UsageMeter({ label, line, windowDays }) {
+  const atCap = line.remaining === 0
+
+  return (
+    <div>
+      <div className="flex justify-between gap-4 text-sm">
+        <span className="font-medium text-slate-700">{label}</span>
+        <span className={atCap ? 'text-rose-700' : 'text-slate-600'}>
+          {line.used} / {line.limit} used in the last {windowDays} days
+        </span>
+      </div>
+      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+        <div
+          className={`h-full ${atCap ? 'bg-rose-500' : 'bg-slate-700'}`}
+          style={{ width: `${Math.min(100, (line.used / line.limit) * 100)}%` }}
+        />
+      </div>
     </div>
   )
 }

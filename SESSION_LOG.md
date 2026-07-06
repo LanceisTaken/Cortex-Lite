@@ -2,6 +2,14 @@
 
 Most recent first.
 
+## [2026-07-06] Cortex Lite - Phase 5 Stripe premium gating shipped
+
+Added the Phase 5 freemium billing slice on branch `Phase-5`: rolling 30-day `usage_events` quota enforcement for recommendation and reverse-mode calls, `is_premium` user state synced from Cashier subscription webhooks, Stripe Checkout creation, `/api/usage` counters, and dashboard usage/upgrade UI. Docs and execution plans now record the quota, webhook, Cashier, and sync-LLM tradeoffs; tests were intentionally not run in this closeout at user request.
+
+-> pending commit `[Sprint 5] add Stripe premium gating`
+
+---
+
 ## [2026-07-06] Cortex Lite - Gemini provider swap documented and configured
 
 Refactored the planned Phase 5 LLM explanation provider from Claude Haiku / Anthropic to the Gemini API. Updated shared config in `.env.example` to `GEMINI_API_KEY` and pinned `GEMINI_MODEL=gemini-3.5-flash`; added `config('services.gemini.*')` wiring in `config/services.php`. The local `.env` was also updated for development but remains intentionally untracked.

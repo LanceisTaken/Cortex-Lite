@@ -7,15 +7,19 @@ use App\Models\Cpu;
 use App\Models\Gpu;
 use App\Services\ExplanationGenerator;
 use App\Services\RecommendationEngine;
+use App\Services\UsageQuota;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 
 class RecommendationController extends Controller
 {
-    public function store(RecommendRequest $request, RecommendationEngine $engine, ExplanationGenerator $explanations): JsonResponse
+    public function store(RecommendRequest $request, RecommendationEngine $engine, ExplanationGenerator $explanations, UsageQuota $quota): JsonResponse
     {
+        $user = $request->user();
+        $quota->ensureWithinLimit($user, 'recommend');
+
         try {
-            $game = $request->user()->games()->findOrFail($request->validated('game_id'));
+            $game = $user->games()->findOrFail($request->validated('game_id'));
         } catch (ModelNotFoundException) {
             return response()->json(null, 404);
         }
@@ -26,13 +30,16 @@ class RecommendationController extends Controller
 
         $result = $engine->recommend($game, $gpu, $cpu, (int) $request->validated('ram_gb'), $goal);
         $fallback = $this->fallbackExplanation($result, $goal);
+        $explanation = $explanations->forward($result, $goal, $game->id, $fallback);
+
+        $quota->record($user, 'recommend');
 
         return response()->json([
             'data' => [
                 'game_id' => $game->id,
                 'goal' => $goal,
                 ...$result,
-                'explanation' => $explanations->forward($result, $goal, $game->id, $fallback),
+                'explanation' => $explanation,
             ],
         ]);
     }

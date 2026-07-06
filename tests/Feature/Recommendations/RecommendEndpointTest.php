@@ -88,6 +88,19 @@ class RecommendEndpointTest extends TestCase
             ->assertStatus(404);
     }
 
+    public function test_idor_404_does_not_consume_quota(): void
+    {
+        [$user, $payload] = $this->scenario();
+        $othersGame = Game::factory()->for(User::factory())->create();
+        $payload['game_id'] = $othersGame->id;
+
+        $this->actingAs($user)
+            ->postJson('/api/recommend', $payload)
+            ->assertStatus(404);
+
+        $this->assertSame(0, $user->usageEvents()->count());
+    }
+
     public function test_anchor_hit_returns_settings_and_explanation(): void
     {
         [$user, $payload] = $this->scenario();
@@ -118,6 +131,47 @@ class RecommendEndpointTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.source', 'heuristic')
             ->assertJsonStructure(['data' => ['settings' => ['texture_quality'], 'explanation']]);
+    }
+
+    public function test_successful_recommend_records_a_usage_event(): void
+    {
+        [$user, $payload] = $this->scenario();
+
+        $this->actingAs($user)
+            ->postJson('/api/recommend', $payload)
+            ->assertOk();
+
+        $this->assertSame(1, $user->usageEvents()->where('type', 'recommend')->count());
+    }
+
+    public function test_free_user_is_blocked_with_402_after_three_recommendations(): void
+    {
+        [$user, $payload] = $this->scenario();
+
+        for ($i = 0; $i < 3; $i++) {
+            $this->actingAs($user)->postJson('/api/recommend', $payload)->assertOk();
+        }
+
+        $this->actingAs($user)
+            ->postJson('/api/recommend', $payload)
+            ->assertStatus(402)
+            ->assertJsonPath('error_code', 'quota_exceeded')
+            ->assertJsonPath('type', 'recommend')
+            ->assertJsonPath('limit', 3);
+
+        $this->assertSame(3, $user->usageEvents()->where('type', 'recommend')->count());
+    }
+
+    public function test_premium_user_is_never_capped_on_recommendations(): void
+    {
+        [$user, $payload] = $this->scenario();
+        $user->forceFill(['is_premium' => true])->save();
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->actingAs($user)->postJson('/api/recommend', $payload)->assertOk();
+        }
+
+        $this->assertTrue(true);
     }
 
     public function test_gemini_prose_is_returned_when_configured(): void

@@ -276,22 +276,22 @@
 
 ### Stripe premium gating (rolling 30-day window)
 
-- [ ] Add `is_premium`, `stripe_customer_id` columns to `users`. **Do not add a counter column** — use the rolling-window count below.
-- [ ] Add `recommendations` and `reverse_mode_calls` tables (or one `usage_events` table with a `type` column) — every call logs a row. Free-tier quota check: `count where user_id = ? and type = 'recommend' and created_at >= now() - interval 30 day`. Rolling window, no reset job.
-- [ ] Install Laravel Cashier.
-- [ ] `POST /api/checkout` creates a Stripe Checkout Session for a $5/month "Cortex Premium" subscription.
-- [ ] Stripe webhook handler at `/api/stripe/webhook` flipping `is_premium` on subscription create/cancel events. **Verify webhook signatures** — most-asked Stripe interview topic.
-- [ ] **CSRF-exempt the webhook route** (`VerifyCsrfToken` middleware excluded for `stripe/webhook`).
-- [ ] **Free tier (all games supported):**
+- [x] Add `is_premium`; use Cashier's existing `stripe_id` customer column instead of adding duplicate `stripe_customer_id`. **Do not add a counter column** - use the rolling-window count below.
+- [x] Add one `usage_events` table with a `type` column - every successful optimizer call logs a row. Free-tier quota check: `count where user_id = ? and type = 'recommend' and created_at >= now() - interval 30 day`. Rolling window, no reset job.
+- [x] Install Laravel Cashier.
+- [x] `POST /api/checkout` creates a Stripe Checkout Session for a $5/month "Cortex Premium" subscription.
+- [x] Stripe webhook handler at `/api/stripe/webhook` flipping `is_premium` on subscription create/cancel events. **Verify webhook signatures** - most-asked Stripe interview topic.
+- [x] **CSRF-exempt the webhook route** (`VerifyCsrfToken` middleware excluded for `stripe/webhook`).
+- [x] **Free tier (all games supported):**
   - 3 recommendations per rolling 30 days
   - 5 reverse-mode calls per rolling 30 days
   - No catalog restriction
-- [ ] **Premium tier:**
+- [x] **Premium tier:**
   - Unlimited recommendations
   - Unlimited reverse-mode calls
-- [ ] Two explicit Stripe webhook test cases: wrong-signature rejection, subscription-cancellation flips `is_premium` to false.
-- [ ] React UI: usage counters on the dashboard ("2 / 3 recommendations used in the last 30 days"), upgrade button, soft-locked state for free users at quota.
-- [ ] End-of-phase: update `DECISIONS.md` (rolling-window choice, LLM-safety pattern, sync explanation choice). Update `TROUBLESHOOTING.md` (Stripe CLI test-mode walkthrough: `stripe listen --forward-to localhost/api/stripe/webhook`, `stripe trigger checkout.session.completed`).
+- [x] Two explicit Stripe webhook test cases: wrong-signature rejection, subscription-cancellation flips `is_premium` to false.
+- [x] React UI: usage counters on the dashboard ("2 / 3 recommendations used in the last 30 days"), upgrade button, soft-locked state for free users at quota.
+- [x] End-of-phase: update `DECISIONS.md` (rolling-window choice, LLM-safety pattern, sync explanation choice). Update `TROUBLESHOOTING.md` (Stripe CLI test-mode walkthrough: `stripe listen --forward-to localhost/api/stripe/webhook`, `stripe trigger checkout.session.completed`).
 
 **Resume bullet (earn before claiming):** *"Built a hybrid recommendation engine combining a deterministic rule-based core with LLM-generated natural-language explanations (Gemini API, pinned model ID), reverse-mode settings-diff feedback also rule-based to preserve the no-hallucination guarantee, Redis caching with unit-tested cache-key construction for cost control, graceful LLM-failure fallback, and a Stripe-gated freemium model enforcing rolling 30-day quotas via event-table counts (no thundering-herd reset job)."*
 
