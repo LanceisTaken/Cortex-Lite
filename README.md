@@ -2,7 +2,7 @@
 
 ## What it is
 
-A portfolio web app for PC gamers: Steam-connected game library, manual session tracking, AI-assisted graphics-settings optimizer (deterministic rule-based engine + Gemini API for prose explanations only), and Stripe freemium tier. Built to demonstrate the backend, cloud, and AI-integration skills required by the Razer Software Engineer JD.
+A portfolio web app for PC gamers: Steam-connected game library, manual session tracking, AI-assisted graphics-settings optimizer (deterministic rule-based engine + Gemini API for prose explanations only), and Stripe freemium tier. Built to demonstrate the backend, cloud, and AI-integration skills.
 
 **Stack:** Laravel 13 · PHP 8.4 · MySQL 8 · Redis 7 · React 19 (Vite) · Stripe · Docker · AWS · Gemini API · Steam Web API · PCGamingWiki API
 
