@@ -58,4 +58,9 @@ return [
         'price' => env('STRIPE_PRICE_PREMIUM'),
     ],
 
+    'ssm' => [
+        'region' => env('AWS_DEFAULT_REGION', 'ap-southeast-1'),
+        'path' => env('SSM_PARAMETER_PATH', '/cortex-lite/'),
+    ],
+
 ];
