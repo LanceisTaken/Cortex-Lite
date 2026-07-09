@@ -1,0 +1,12 @@
+[
+  { "title": "Cyberpunk 2077", "steam_app_id": 1091500, "genre": "RPG", "status": "playing", "playtime_minutes": 4820, "source": "steam", "metadata_status": "ok" },
+  { "title": "Counter-Strike 2", "steam_app_id": 730, "genre": "FPS", "status": "playing", "playtime_minutes": 15230, "source": "steam", "metadata_status": "ok" },
+  { "title": "Elden Ring", "steam_app_id": 1245620, "genre": "Souls", "status": "completed", "playtime_minutes": 6110, "source": "steam", "metadata_status": "ok" },
+  { "title": "Baldur's Gate 3", "steam_app_id": 1086940, "genre": "RPG", "status": "playing", "playtime_minutes": 5300, "source": "steam", "metadata_status": "ok" },
+  { "title": "Helldivers 2", "steam_app_id": 553850, "genre": "Shooter", "status": "backlog", "playtime_minutes": 940, "source": "steam", "metadata_status": "ok" },
+  { "title": "Red Dead Redemption 2", "steam_app_id": 1174180, "genre": "Action", "status": "completed", "playtime_minutes": 7200, "source": "steam", "metadata_status": "ok" },
+  { "title": "Grand Theft Auto V", "steam_app_id": 271590, "genre": "Action", "status": "backlog", "playtime_minutes": 3600, "source": "steam", "metadata_status": "ok" },
+  { "title": "Valorant", "steam_app_id": null, "genre": "FPS", "status": "playing", "playtime_minutes": 2100, "source": "manual", "metadata_status": "missing" },
+  { "title": "Minecraft Java Edition", "steam_app_id": null, "genre": "Sandbox", "status": "playing", "playtime_minutes": 8800, "source": "manual", "metadata_status": "missing" },
+  { "title": "Fortnite", "steam_app_id": null, "genre": "Battle Royale", "status": "dropped", "playtime_minutes": 1300, "source": "manual", "metadata_status": "missing" }
+]
