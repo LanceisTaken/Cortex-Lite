@@ -59,7 +59,11 @@ return [
     ],
 
     'ssm' => [
-        'region' => env('AWS_DEFAULT_REGION', 'ap-southeast-1'),
+        // Use `?:` not the env() default: a present-but-empty AWS_DEFAULT_REGION
+        // (e.g. compose interpolating a blank host var) returns '' and would
+        // shadow env()'s second-argument default, leaving the SSM client with
+        // no region. `?:` coerces that empty string back to the fallback.
+        'region' => env('AWS_DEFAULT_REGION') ?: 'ap-southeast-1',
         'path' => env('SSM_PARAMETER_PATH', '/cortex-lite/'),
     ],
 

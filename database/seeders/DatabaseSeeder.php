@@ -23,9 +23,13 @@ class DatabaseSeeder extends Seeder
             SettingPresetSeeder::class,
         ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Faker is a dev-only dependency; the factory user cannot be created
+        // in production images built with composer --no-dev.
+        if (! app()->environment('production')) {
+            User::factory()->create([
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+            ]);
+        }
     }
 }
