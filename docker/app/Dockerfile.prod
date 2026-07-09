@@ -1,0 +1,32 @@
+# Production PHP-FPM image: code baked in, non-root, secrets pulled at boot.
+FROM php:8.4-fpm-alpine
+
+RUN apk add --no-cache \
+        bash git curl icu-dev libzip-dev oniguruma-dev \
+        libpng-dev libjpeg-turbo-dev freetype-dev \
+        autoconf g++ make linux-headers \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" pdo_mysql bcmath intl zip gd opcache \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del --no-network autoconf g++ make linux-headers
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+
+COPY . .
+RUN composer dump-autoload --optimize --no-dev \
+    && chown -R www-data:www-data storage bootstrap/cache
+
+COPY docker/app/entrypoint.prod.sh /usr/local/bin/entrypoint.prod.sh
+RUN chmod +x /usr/local/bin/entrypoint.prod.sh
+
+USER www-data
+
+EXPOSE 9000
+ENTRYPOINT ["/usr/local/bin/entrypoint.prod.sh"]
+CMD ["php-fpm"]

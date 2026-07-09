@@ -1,0 +1,68 @@
+# Cortex Lite production topology. MySQL is RDS, not a container.
+# Secrets come from Parameter Store via each PHP service's prod entrypoint.
+# Bring up with: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  app:
+    image: ${ECR_REGISTRY}/cortex-lite-app:latest
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile.prod
+    restart: unless-stopped
+    environment:
+      SSM_PARAMETER_PATH: /cortex-lite/
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+    depends_on:
+      - redis
+    networks: [cortex_net]
+
+  nginx:
+    image: ${ECR_REGISTRY}/cortex-lite-nginx:latest
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    networks: [cortex_net]
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks: [cortex_net]
+
+  scheduler:
+    image: ${ECR_REGISTRY}/cortex-lite-app:latest
+    restart: unless-stopped
+    environment:
+      SSM_PARAMETER_PATH: /cortex-lite/
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+    command: ["php", "artisan", "schedule:work"]
+    depends_on:
+      - app
+      - redis
+    networks: [cortex_net]
+
+  queue:
+    image: ${ECR_REGISTRY}/cortex-lite-app:latest
+    restart: unless-stopped
+    environment:
+      SSM_PARAMETER_PATH: /cortex-lite/
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+    command: ["php", "artisan", "queue:work", "--tries=3", "--sleep=3"]
+    depends_on:
+      - app
+      - redis
+    networks: [cortex_net]
+
+networks:
+  cortex_net:
+    driver: bridge
+
+volumes:
+  redis_data:
