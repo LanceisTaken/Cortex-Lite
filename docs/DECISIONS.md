@@ -350,3 +350,45 @@ Format per entry:
 **Rationale:** The Stripe account and target demo audience are Malaysian; pricing in the account's native currency avoids FX presentment surprises and makes the Stripe test dashboard, checkout page, and app UI all show the same number. The Stripe Price object is the single source of truth for the charge; config and UI copy follow it.
 **Alternatives considered:** USD $5/month as originally planned (rejected: mismatched the Stripe account currency and would present a converted amount at checkout); multi-currency prices (rejected: needless complexity for a single-market portfolio demo).
 **Consequences:** README, build plan, and the two hardcoded upgrade-button labels must stay in sync with the Stripe Price if it ever changes. Historical plan documents under `docs/superpowers/` still say $5/mo as a record of what was planned at the time.
+
+### t3.small over t2.micro for live deployment
+**Date:** 2026-07-09
+**Decision:** Run the live demo on EC2 t3.small rather than t2.micro.
+**Rationale:** The production host runs nginx, PHP-FPM, Redis, the scheduler, and the queue worker at the same time. A 1 GB t2.micro has too little memory headroom once Steam sync, queue work, and an optimizer request overlap. t3.small's 2 GB RAM gives the demo a much safer operating envelope.
+**Alternatives considered:** t2.micro (rejected because container OOM during a portfolio demo is more expensive than the small EC2 cost delta). Larger instances (rejected because the workload is still single-user demo scale).
+**Consequences:** The demo costs slightly more during the 48-hour window, but remains inside the AWS credit pool and has a clearer reliability story.
+
+### In-container Redis over ElastiCache for Phase 6
+**Date:** 2026-07-09
+**Decision:** Keep Redis as a container on the EC2 host instead of provisioning ElastiCache.
+**Rationale:** Phase 6 is a single-instance deployment. Redis is used for cache, sessions, queues, and external API rate limits, none of which need cross-instance sharing until the app scales horizontally.
+**Alternatives considered:** ElastiCache Redis (rejected as extra cost and console complexity for no multi-host benefit). Database-backed cache/session/queue only (rejected because Redis is already part of the app design and protects Steam, PCGamingWiki, and Gemini usage).
+**Consequences:** Redis data is tied to the EC2 host. That is acceptable for the demo window; RDS remains the durable store.
+
+### IAM-role SSM fetch over `.env` on disk
+**Date:** 2026-07-09
+**Decision:** Production containers fetch Parameter Store SecureStrings at boot via `ssm:export` using the EC2 instance role, then eval them into the process environment.
+**Rationale:** Secrets never need to be copied into a committed file, an EC2 `.env`, or an image layer. The operator manages values in Parameter Store, and the instance role grants only the `/cortex-lite/*` read scope.
+**Alternatives considered:** Copy a `.env` file to EC2 (rejected because secrets remain on disk and are easy to forget during teardown). Baking secrets into images (rejected because image layers and ECR history would retain them). Static AWS keys in compose (rejected because the instance role is the correct AWS trust boundary).
+**Consequences:** Container startup depends on IMDSv2 and SSM permissions. Local image smoke tests use `SSM_SKIP=1`; production must not.
+
+### Manual Console runbook over Terraform
+**Date:** 2026-07-09
+**Decision:** Document a manual AWS Console deployment runbook with helper scripts instead of adding Terraform.
+**Rationale:** The target is a 48-hour portfolio deployment. Manual provisioning is easier to inspect, screenshot, and debug in a short window, and the runbook keeps every required AWS choice explicit for interview review.
+**Alternatives considered:** Terraform (rejected because state management and provider setup add more tooling than this throwaway deploy needs). Fully manual with no scripts (rejected because image build/push and EC2 bootstrap are repetitive and error-prone).
+**Consequences:** Reproducibility comes from documentation rather than IaC. Teardown must be verified by hand with Cost Explorer.
+
+### CloudFront free domain over custom domain
+**Date:** 2026-07-09
+**Decision:** Use the free CloudFront `*.cloudfront.net` domain for Phase 6.
+**Rationale:** HTTPS is mandatory for a credible auth/billing demo, but buying and configuring a custom domain is not necessary for a short portfolio window.
+**Alternatives considered:** Custom domain with ACM certificate (rejected as cost/setup overhead). Plain EC2 HTTP only (rejected because Stripe, Sanctum cookies, and evaluator trust all benefit from HTTPS).
+**Consequences:** README screenshots and demo links use a less branded URL until a later deployment invests in a domain.
+
+### Demo nightly full reseed over quota-only reset
+**Date:** 2026-07-09
+**Decision:** Reset the demo account nightly by wiping and reseeding its games, play sessions, usage events, and premium flag.
+**Rationale:** Evaluators should all see the same populated walkthrough even if a previous visitor deletes games, exhausts quota, or upgrades the account. A quota-only reset would not repair library/session drift.
+**Alternatives considered:** Reset only `usage_events` (rejected because the library can still be vandalized). Manual reseed before each demo (rejected because the public link may be visited asynchronously).
+**Consequences:** Visitor changes to the demo account are intentionally temporary. Other users are untouched, and the multi-write reset runs in a database transaction.

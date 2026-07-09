@@ -86,5 +86,5 @@ Laravel 13, PHP 8.4, MySQL 8.4, Redis 7, React 19 (Vite), Tailwind, Laravel Sanc
 - [x] Phase 3 — Session tracking
 - [ ] Phase 4 — Hardware database + data pipeline (starts with 1-day PCGamingWiki spike)
 - [ ] Phase 5 — AI optimizer + Stripe freemium
-- [ ] Phase 6 — AWS deployment + NATIVE_AGENT_CONTRACT.md
+- [x] Phase 6 — AWS deployment + NATIVE_AGENT_CONTRACT.md
 - [ ] Phase 7 — WebSockets stretch goal (only if 0–6 finish on time)

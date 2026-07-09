@@ -21,6 +21,63 @@ System design and infrastructure. Update when adding or removing services, chang
 
 ## AWS infrastructure (Phase 6+)
 
+Production is a short-lived manual AWS deployment intended for a portfolio demo,
+not a long-running SaaS environment.
+
+```text
+Browser
+  |
+  | HTTPS
+  v
+CloudFront (*.cloudfront.net)
+  |
+  | HTTP origin
+  v
+EC2 t3.small, public subnet
+  |
+  +-- nginx container -> static React build + /api proxy
+  +-- app container -> PHP-FPM Laravel API
+  +-- scheduler container -> Laravel schedule:work
+  +-- queue container -> Laravel queue:work
+  +-- redis container -> cache, sessions, queues, rate limits
+  |
+  v
+RDS MySQL db.t4g.micro, private access from EC2 SG only
+
+EC2 instance role -> SSM Parameter Store SecureStrings -> app env at boot
+```
+
+- **EC2 t3.small:** one box is enough for the demo topology while avoiding the
+  t2.micro OOM risk from PHP-FPM, nginx, Redis, scheduler, and queue overlap.
+- **RDS MySQL:** managed database keeps data off the disposable EC2 host and
+  matches the MySQL 8 dev target.
+- **In-container Redis:** sufficient for a single-instance deployment; no need
+  for ElastiCache until there are multiple app hosts sharing cache/queue state.
+- **ECR:** stores the baked production app image and the nginx/static image.
+- **CloudFront:** provides mandatory HTTPS through the free `*.cloudfront.net`
+  domain. `/api/stripe/webhook` needs a dedicated no-cache behavior that
+  forwards all headers, cookies, and query strings so `Stripe-Signature` and the
+  raw body survive.
+- **Parameter Store:** app secrets are SecureStrings under `/cortex-lite/`.
+  PHP containers call `ssm:export` at boot through the instance role and eval the
+  resulting shell exports in memory. Production does not write `.env` files.
+- **CloudWatch:** receives container/host logs during the 48-hour demo window.
+
+Security boundaries:
+
+- EC2 security group exposes 80/443 publicly and SSH only from the operator IP.
+- RDS security group allows 3306 only from the EC2 security group.
+- There is no NAT Gateway; the EC2 instance runs in a public subnet to control
+  cost and reduce moving parts.
+- Static AWS keys are not configured in containers; SSM access comes from the
+  EC2 instance role.
+
+Expected demo-window cost is approximately a few dollars or less: EC2 t3.small
+for 48 hours, RDS db.t4g.micro for 48 hours, ECR storage, and low CloudFront
+traffic. New AWS accounts use the shared $200 credit pool, so teardown is still
+mandatory. Follow `docs/DEPLOYMENT.md` section 12 to delete all resources and
+verify Cost Explorer returns near-$0 daily spend.
+
 ## External integrations
 
 - Steam OpenID connects an already-authenticated Cortex Lite user to a SteamID64. It does not replace Sanctum.

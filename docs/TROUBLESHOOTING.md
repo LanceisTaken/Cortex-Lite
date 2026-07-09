@@ -28,6 +28,10 @@ Format per entry:
 **Cause:** CloudFront's default cache behavior strips several headers (including `Stripe-Signature`) and can modify the request body in transit, both of which break `\Stripe\Webhook::constructEvent()`. The signature was calculated by Stripe against the raw body; any mutation invalidates it.
 **Fix:** Add a dedicated cache behavior in CloudFront for the path pattern `/api/stripe/webhook`: caching disabled (TTL 0), forward all headers, forward all query strings, request body unmodified, allowed methods restricted to POST. Redeploy the distribution. Retest with `stripe trigger checkout.session.completed` against the live CloudFront URL. Also ensure the webhook route is CSRF-exempt in Laravel (`VerifyCsrfToken` middleware excludes `stripe/webhook`).
 
+### Production containers boot without secrets or `ssm:export` fails
+**Cause:** The EC2 instance role is missing `ssm:GetParametersByPath` / `ssm:GetParameters`, KMS decrypt permission, or the containers cannot reach IMDSv2 at `169.254.169.254` to obtain role credentials.
+**Fix:** Confirm the EC2 instance profile is attached, the policy allows `/cortex-lite/*`, and IMDSv2 is enabled/reachable. Then run `docker compose -f docker-compose.prod.yml logs app` to read the AWS SDK error. `SSM_SKIP=1` is only for local image smoke tests; never use it for production.
+
 ### Testing Stripe webhooks locally
 **Cause:** Not an error — this is the setup for local webhook testing when the endpoint isn't yet publicly reachable.
 **Fix:** Install the Stripe CLI. In one terminal: `stripe login` (once), then `stripe listen --forward-to localhost/api/stripe/webhook`. The CLI prints a signing secret starting with `whsec_...` — put that in `.env` as `STRIPE_WEBHOOK_SECRET` and restart the app container. In another terminal, fire events: `stripe trigger checkout.session.completed`, `stripe trigger customer.subscription.deleted`, etc. The `stripe listen` process must be running throughout — it's the tunnel.
