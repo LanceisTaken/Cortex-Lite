@@ -2,6 +2,9 @@
 .claude/settings.local.json
 CLAUDE.md
 
+# SSH keys
+/.ssh/
+
 # Laravel
 *.log
 .DS_Store
